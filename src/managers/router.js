@@ -8,6 +8,7 @@ import MerchantDashboardScreen from '../components/screens/MerchantDashboardScre
 import AuthScreen from '../components/screens/AuthScreen';
 import LandingPageEditorScreen from '../components/screens/LandingPageEditorScreen.js';
 import { ProductLandingScreen } from '../components/screens/ProductLandingScreen.js';
+import MerchantWelcomeScreen from '../components/screens/MerchantWelcomeScreen';
 
 class Router {
     constructor(rootId) {
@@ -87,6 +88,9 @@ class Router {
                 break;
             case 'product-landing':
                 new ProductLandingScreen(this.root, { productId: appState.productId });
+                break;
+            case 'merchant-welcome':
+                new MerchantWelcomeScreen(this.root);
                 break;
             default:
                 new GatewayScreen(this.root);
