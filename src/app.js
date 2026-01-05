@@ -1,3 +1,4 @@
+import './styles/main.css';
 import Router from './managers/router';
 import { setupAnimations } from './managers/animations';
 import state from './managers/state-manager';
