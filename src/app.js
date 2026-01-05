@@ -2,15 +2,11 @@ import './styles/main.css';
 import Router from './managers/router';
 import { setupAnimations } from './managers/animations';
 import state from './managers/state-manager';
-// import AuthorizationService from './services/authorization.service'; // REMOVED
 
 document.addEventListener('DOMContentLoaded', () => {
     setupAnimations();
     const router = new Router('app-root');
     router.init();
-
-    // Initialize authorization service (REMOVED - RLS now handles it)
-    // AuthorizationService.init(); // REMOVED
 
     // Force initial navigation
     const initialState = state.getState();
