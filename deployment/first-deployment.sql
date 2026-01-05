@@ -29,7 +29,7 @@ ALTER TABLE public.merchants FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.products FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.wholesale_prices FORCE ROW LEVEL SECURITY;
 
--- 4. RLS Policies for user_roles
+-- 4. RLS Policies for user_roles (SELECT only for ADMIN, no runtime INSERT/UPDATE/DELETE)
 CREATE POLICY "Admins can read all roles"
 ON public.user_roles FOR SELECT
 TO authenticated
@@ -37,11 +37,16 @@ USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'ADMIN')
 );
 
+-- No INSERT, UPDATE, DELETE policies for runtime - only via one-time script
+
 -- 5. RLS Policies for merchants
-CREATE POLICY "Public read for merchants"
+CREATE POLICY "Merchants can read their own data"
 ON public.merchants FOR SELECT
-TO public
-USING (true);
+TO authenticated
+USING (
+    owner_id = auth.uid() OR
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'ADMIN')
+);
 
 CREATE POLICY "Authenticated users can apply for merchant status"
 ON public.merchants FOR INSERT
@@ -54,23 +59,84 @@ TO authenticated
 USING (
     owner_id = auth.uid() AND
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'MERCHANT')
+)
+WITH CHECK (
+    owner_id = auth.uid() AND
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'MERCHANT')
 );
 
-CREATE POLICY "Admins have full control over merchants"
-ON public.merchants ALL
+CREATE POLICY "Admins can insert merchants"
+ON public.merchants FOR INSERT
+TO authenticated
+WITH CHECK (
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'ADMIN')
+);
+
+CREATE POLICY "Admins can update merchants"
+ON public.merchants FOR UPDATE
+TO authenticated
+USING (
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'ADMIN')
+)
+WITH CHECK (
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'ADMIN')
+);
+
+CREATE POLICY "Admins can delete merchants"
+ON public.merchants FOR DELETE
 TO authenticated
 USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'ADMIN')
 );
 
 -- 6. RLS Policies for products
-CREATE POLICY "Public read for products"
+CREATE POLICY "Merchants can read their products"
 ON public.products FOR SELECT
-TO public
-USING (true);
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM public.merchants
+        WHERE id = public.products.merchant_id
+        AND owner_id = auth.uid()
+        AND EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'MERCHANT')
+    ) OR
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'ADMIN')
+);
 
-CREATE POLICY "Owners can manage their products"
-ON public.products ALL
+CREATE POLICY "Owners can insert their products"
+ON public.products FOR INSERT
+TO authenticated
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM public.merchants
+        WHERE id = merchant_id
+        AND owner_id = auth.uid()
+        AND EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'MERCHANT')
+    )
+);
+
+CREATE POLICY "Owners can update their products"
+ON public.products FOR UPDATE
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM public.merchants
+        WHERE id = public.products.merchant_id
+        AND owner_id = auth.uid()
+        AND EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'MERCHANT')
+    )
+)
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM public.merchants
+        WHERE id = public.products.merchant_id
+        AND owner_id = auth.uid()
+        AND EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'MERCHANT')
+    )
+);
+
+CREATE POLICY "Owners can delete their products"
+ON public.products FOR DELETE
 TO authenticated
 USING (
     EXISTS (
@@ -81,21 +147,82 @@ USING (
     )
 );
 
-CREATE POLICY "Admins can manage all products"
-ON public.products ALL
+CREATE POLICY "Admins can insert products"
+ON public.products FOR INSERT
+TO authenticated
+WITH CHECK (
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'ADMIN')
+);
+
+CREATE POLICY "Admins can update products"
+ON public.products FOR UPDATE
+TO authenticated
+USING (
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'ADMIN')
+)
+WITH CHECK (
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'ADMIN')
+);
+
+CREATE POLICY "Admins can delete products"
+ON public.products FOR DELETE
 TO authenticated
 USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'ADMIN')
 );
 
--- 7. RLS Policies for wholesale_prices
-CREATE POLICY "Public read for wholesale prices"
+-- 7. RLS Policies for wholesale_prices (only ADMIN and owning MERCHANT)
+CREATE POLICY "Owners can read their wholesale prices"
 ON public.wholesale_prices FOR SELECT
-TO public
-USING (true);
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM public.products p
+        JOIN public.merchants m ON p.merchant_id = m.id
+        WHERE p.id = public.wholesale_prices.product_id
+        AND m.owner_id = auth.uid()
+        AND EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'MERCHANT')
+    ) OR
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'ADMIN')
+);
 
-CREATE POLICY "Owners can manage their wholesale prices"
-ON public.wholesale_prices ALL
+CREATE POLICY "Owners can insert their wholesale prices"
+ON public.wholesale_prices FOR INSERT
+TO authenticated
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM public.products p
+        JOIN public.merchants m ON p.merchant_id = m.id
+        WHERE p.id = product_id
+        AND m.owner_id = auth.uid()
+        AND EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'MERCHANT')
+    )
+);
+
+CREATE POLICY "Owners can update their wholesale prices"
+ON public.wholesale_prices FOR UPDATE
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM public.products p
+        JOIN public.merchants m ON p.merchant_id = m.id
+        WHERE p.id = public.wholesale_prices.product_id
+        AND m.owner_id = auth.uid()
+        AND EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'MERCHANT')
+    )
+)
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM public.products p
+        JOIN public.merchants m ON p.merchant_id = m.id
+        WHERE p.id = public.wholesale_prices.product_id
+        AND m.owner_id = auth.uid()
+        AND EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'MERCHANT')
+    )
+);
+
+CREATE POLICY "Owners can delete their wholesale prices"
+ON public.wholesale_prices FOR DELETE
 TO authenticated
 USING (
     EXISTS (
@@ -107,8 +234,25 @@ USING (
     )
 );
 
-CREATE POLICY "Admins can manage all wholesale prices"
-ON public.wholesale_prices ALL
+CREATE POLICY "Admins can insert wholesale prices"
+ON public.wholesale_prices FOR INSERT
+TO authenticated
+WITH CHECK (
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'ADMIN')
+);
+
+CREATE POLICY "Admins can update wholesale prices"
+ON public.wholesale_prices FOR UPDATE
+TO authenticated
+USING (
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'ADMIN')
+)
+WITH CHECK (
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'ADMIN')
+);
+
+CREATE POLICY "Admins can delete wholesale prices"
+ON public.wholesale_prices FOR DELETE
 TO authenticated
 USING (
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'ADMIN')
