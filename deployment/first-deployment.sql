@@ -8,6 +8,9 @@ CREATE TABLE IF NOT EXISTS public.user_roles (
     PRIMARY KEY (user_id, role)
 );
 
+-- Merchants Table (add status column)
+ALTER TABLE public.merchants ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected'));
+
 -- 2. Create Wholesale Prices Table (assuming for product wholesale prices)
 CREATE TABLE IF NOT EXISTS public.wholesale_prices (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -39,8 +42,8 @@ USING (
 
 -- No INSERT, UPDATE, DELETE policies for runtime - only via one-time script
 
--- 5. RLS Policies for merchants
-CREATE POLICY "Merchants can read their own data"
+-- 5. RLS Policies for merchants (with status: pending/approved/rejected)
+CREATE POLICY "Users can read their own merchant applications"
 ON public.merchants FOR SELECT
 TO authenticated
 USING (
@@ -51,28 +54,31 @@ USING (
 CREATE POLICY "Authenticated users can apply for merchant status"
 ON public.merchants FOR INSERT
 TO authenticated
-WITH CHECK (auth.uid() = owner_id);
+WITH CHECK (auth.uid() = owner_id AND status = 'pending');
 
-CREATE POLICY "Owners can update their own merchant data"
+CREATE POLICY "Owners can update pending applications"
 ON public.merchants FOR UPDATE
 TO authenticated
 USING (
-    owner_id = auth.uid() AND
+    owner_id = auth.uid() AND status = 'pending'
+)
+WITH CHECK (
+    owner_id = auth.uid() AND status = 'pending'
+);
+
+CREATE POLICY "Approved merchants can update their data"
+ON public.merchants FOR UPDATE
+TO authenticated
+USING (
+    owner_id = auth.uid() AND status = 'approved' AND
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'MERCHANT')
 )
 WITH CHECK (
-    owner_id = auth.uid() AND
+    owner_id = auth.uid() AND status = 'approved' AND
     EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'MERCHANT')
 );
 
-CREATE POLICY "Admins can insert merchants"
-ON public.merchants FOR INSERT
-TO authenticated
-WITH CHECK (
-    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'ADMIN')
-);
-
-CREATE POLICY "Admins can update merchants"
+CREATE POLICY "Admins can update merchants status"
 ON public.merchants FOR UPDATE
 TO authenticated
 USING (
