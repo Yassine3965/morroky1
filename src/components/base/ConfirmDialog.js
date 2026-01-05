@@ -51,6 +51,9 @@ export default class ConfirmDialog {
         }
 
         container.innerHTML = this.template();
+        if (this.state.visible) {
+            this.onRendered();
+        }
     }
 
     template() {

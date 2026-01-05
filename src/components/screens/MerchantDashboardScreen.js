@@ -212,15 +212,15 @@ export default class MerchantDashboardScreen {
     }
 
     template() {
-        if (this.state.loading) return `<div class="p-12 text-center text-gray-500">Loading dashboard...</div>`;
+        if (this.state.loading) return `<div class="p-12 text-center text-gray-500">جاري تحميل لوحة التحكم...</div>`;
         
         if (this.state.error) {
              return `
                 <div class="min-h-screen flex items-center justify-center bg-gray-50 rtl">
                     <div class="text-center p-12 bg-white rounded-3xl shadow-xl max-w-md">
-                        <h2 class="text-2xl font-black text-red-600 mb-4">Access Denied</h2>
-                        <p class="text-gray-600 mb-6">You do not have permission to view this page. Please log in with the correct account.</p>
-                        <button id="btn-logout" class="bg-morroky-dark text-white px-8 py-3 rounded-2xl font-bold">Return and Log In</button>
+                        <h2 class="text-2xl font-black text-red-600 mb-4">تم رفض الوصول</h2>
+                        <p class="text-gray-600 mb-6">ليس لديك صلاحية لعرض هذه الصفحة. يرجى تسجيل الدخول بحساب صحيح.</p>
+                        <button id="btn-logout" class="bg-morroky-dark text-white px-8 py-3 rounded-2xl font-bold">العودة وتسجيل الدخول</button>
                     </div>
                 </div>
             `;
@@ -243,7 +243,7 @@ export default class MerchantDashboardScreen {
                     <div class="modal-content bg-white w-full max-w-2xl rounded-3xl shadow-2xl animate-slide-up">
                        <div class="p-8">
                             <div class="flex justify-between items-center mb-6">
-                                <h2 class="text-2xl font-bold text-gray-900">Choose a Product for the Landing Page</h2>
+                                <h2 class="text-2xl font-bold text-gray-900">اختر منتج للصفحة المقصودة</h2>
                                 <button id="close-lp-modal" class="text-gray-400 hover:text-morroky-red text-2xl">&times;</button>
                             </div>
                             <div class="max-h-[60vh] overflow-y-auto space-y-3">
@@ -253,12 +253,12 @@ export default class MerchantDashboardScreen {
                                             <img src="${p.image_url || 'https://placehold.co/100x100'}" class="w-16 h-16 rounded-lg object-cover" />
                                             <div>
                                                 <h3 class="font-bold text-gray-800">${p.name}</h3>
-                                                <p class="text-sm text-morroky-green font-bold">${p.price} DH</p>
+                                                <p class="text-sm text-morroky-green font-bold">${p.price} درهم</p>
                                             </div>
                                         </div>
-                                        <button class="text-blue-600 font-bold text-sm">Customize</button>
+                                        <button class="text-blue-600 font-bold text-sm">تخصيص</button>
                                     </div>
-                                `).join('') : '<p class="text-center text-gray-500 py-8">You must add products first.</p>'}
+                                `).join('') : '<p class="text-center text-gray-500 py-8">يجب إضافة منتجات أولاً.</p>'}
                             </div>
                         </div>
                     </div>
@@ -267,28 +267,28 @@ export default class MerchantDashboardScreen {
                 <div class="max-w-4xl mx-auto">
                      <header class="mb-8 flex justify-between items-center">
                         <div>
-                            <h1 class="text-3xl font-black text-gray-900">Manage: ${m.name}</h1>
+                            <h1 class="text-3xl font-black text-gray-900">إدارة: ${m.name}</h1>
                         </div>
-                        <a href="javascript:void(0)" id="back-link" class="text-blue-600 font-bold hover:underline">Return to Main</a>
+                        <a href="javascript:void(0)" id="back-link" class="text-blue-600 font-bold hover:underline">العودة إلى الرئيسية</a>
                     </header>
 
                     <!-- Main Grid -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <!-- Left Column: Branding -->
                         <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 h-fit">
-                            <h2 class="text-xl font-bold mb-4">Branding</h2>
+                            <h2 class="text-xl font-bold mb-4">العلامة التجارية</h2>
                             <div class="flex flex-col items-center">
                                 <div class="w-32 h-32 rounded-full bg-gray-100 overflow-hidden mb-4 border-4 border-white shadow-lg relative group">
                                     <img src="${m.logo_url || 'https://placehold.co/200x200'}" class="w-full h-full object-cover" />
                                     <label class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer text-white font-bold text-xs">
-                                        Change
+                                        تغيير
                                         <input type="file" id="logo-input" accept="image/*" class="hidden" />
                                     </label>
                                 </div>
                                 <div class="w-full h-32 rounded-xl bg-white overflow-hidden mb-4 border-4 border-white shadow-lg relative group">
                                      <div class="absolute inset-0 opacity-10" style="background-image: url('${m.background_url || ''}'); background-size: cover; background-position: center;"></div>
                                      <label class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer text-white font-bold text-sm z-20">
-                                        Change Background
+                                        تغيير الخلفية
                                         <input type="file" id="background-input" accept="image/*" class="hidden" />
                                     </label>
                                 </div>
@@ -298,18 +298,18 @@ export default class MerchantDashboardScreen {
                         <!-- Right Column: Products -->
                         <div class="md:col-span-2 space-y-8">
                             <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                                <h2 class="text-xl font-bold mb-4">Add New Product</h2>
+                                <h2 class="text-xl font-bold mb-4">إضافة منتج جديد</h2>
                                 <form id="add-product-form" class="space-y-4">
                                     <!-- Form fields -->
-                                     <input type="text" id="prod-name" class="w-full p-3 bg-gray-50 rounded-xl border" placeholder="Product Name" required />
-                                     <input type="number" id="prod-price" class="w-full p-3 bg-gray-50 rounded-xl border" placeholder="Price (DH)" required />
+                                     <input type="text" id="prod-name" class="w-full p-3 bg-gray-50 rounded-xl border" placeholder="اسم المنتج" required />
+                                     <input type="number" id="prod-price" class="w-full p-3 bg-gray-50 rounded-xl border" placeholder="السعر (درهم)" required />
                                      <input type="file" id="prod-image" accept="image/*" class="w-full p-2 bg-gray-50 rounded-xl border text-sm" />
-                                    <button type="submit" class="w-full bg-morroky-blue text-white font-bold py-3 rounded-xl">+ Add Product</button>
+                                    <button type="submit" class="w-full bg-morroky-blue text-white font-bold py-3 rounded-xl">+ إضافة منتج</button>
                                 </form>
                             </div>
 
                             <div>
-                                <h2 class="text-xl font-bold mb-4">My Products (${products.length})</h2>
+                                <h2 class="text-xl font-bold mb-4">منتجاتي (${products.length})</h2>
                                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                     ${products.map(p => `
                                         <div class="bg-white rounded-2xl overflow-hidden border group relative">
