@@ -43,6 +43,11 @@ USING (
 -- No INSERT, UPDATE, DELETE policies for runtime - only via one-time script
 
 -- 5. RLS Policies for merchants (with status: pending/approved/rejected)
+CREATE POLICY "Public can read approved merchants"
+ON public.merchants FOR SELECT
+TO public
+USING (status = 'approved');
+
 CREATE POLICY "Users can read their own merchant applications"
 ON public.merchants FOR SELECT
 TO authenticated

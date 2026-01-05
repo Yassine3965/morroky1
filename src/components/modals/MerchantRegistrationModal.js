@@ -14,6 +14,12 @@ export default class MerchantRegistrationModal {
     };
   }
 
+  mount(container) {
+    this.container = container;
+    this.container.innerHTML = this.template();
+    this.onRendered();
+  }
+
   template() {
     return `
       <div id="modal-container" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
