@@ -2,42 +2,67 @@ import state from '../../managers/state-manager.js';
 import MerchantService from '../../services/merchant.service.js';
 
 export default class LandingPageEditorScreen {
-    constructor(props = {}) {
+    constructor(container, props = {}) {
+        this.container = container;
         this.productId = props.productId;
         this.merchantId = props.merchantId;
         this.state = {
             product: null,
             loading: true,
+            error: null, // To handle access denied or not found
             landingPageConfig: {}
         };
+        this.mount();
     }
 
-    async onRendered() {
+    async mount() {
         if (!this.productId || !this.merchantId) {
-            state.showToast('خطأ: معرف المنتج أو التاجر غير موجود.', 'error');
-            state.setState({ screen: 'merchant-dashboard', merchantId: this.merchantId });
+            this._setState({ loading: false, error: 'خطأ: معرف المنتج أو التاجر غير موجود.' });
             return;
         }
+        this.render(); // Initial render with loading state
         await this.fetchProductData();
+    }
+
+    _setState(partialState) {
+        this.state = { ...this.state, ...partialState };
+        this.render();
+    }
+
+    render() {
+        this.container.innerHTML = this.template();
         this.bindEvents();
+    }
+
+    bindEvents() {
+        this.container.querySelector('#back-to-dashboard')?.addEventListener('click', () => {
+            state.setState({ screen: 'merchant-dashboard', merchantId: this.merchantId });
+            window.location.hash = `#/__manage/${this.merchantId}`;
+        });
+
+        this.container.querySelector('#save-lp-btn')?.addEventListener('click', this.handleSave);
     }
 
     async fetchProductData() {
         try {
             const product = await MerchantService.getProductById(this.productId);
-            if (product.merchant_id !== this.merchantId) {
-                state.showToast('ليس لديك صلاحية لتعديل هذا المنتج.', 'error');
-                state.setState({ screen: 'merchant-dashboard', merchantId: this.merchantId });
-                return;
+            
+            // RLS will handle if current user is not the owner
+            // If MerchantService.getProductById(this.productId) returns null or throws an error
+            // due to RLS, it will be caught here.
+            if (!product || product.merchant_id !== this.merchantId) {
+                throw new Error('Product not found or access denied.');
             }
-            this.state = { ...this.state,
-                product, 
+            
+            this._setState({
+                product,
                 loading: false,
+                error: null,
                 landingPageConfig: product.landing_page_config || {}
-            };
+            });
         } catch (error) {
-            state.showToast('فشل في تحميل بيانات المنتج.', 'error');
-            this.state = { ...this.state, loading: false };
+            console.error('Failed to fetch product data for LP editor:', error);
+            this._setState({ loading: false, error: 'Access Denied. You do not have permission to edit this product.' });
         }
     }
 
@@ -53,22 +78,28 @@ export default class LandingPageEditorScreen {
         try {
             await MerchantService.updateProductLandingPage(this.productId, newConfig);
             state.showToast('تم حفظ صفحة الهبوط بنجاح!', 'success');
+            // Optionally re-fetch to show latest config
+            await this.fetchProductData();
         } catch (error) {
             state.showToast('فشل حفظ البيانات: ' + error.message, 'error');
         }
     }
 
-    bindEvents() {
-        this.container.querySelector('#back-to-dashboard')?.addEventListener('click', () => {
-            state.setState({ screen: 'merchant-dashboard', merchantId: this.merchantId });
-        });
-
-        this.container.querySelector('#save-lp-btn')?.addEventListener('click', this.handleSave);
-    }
-
     template() {
         if (this.state.loading) {
             return `<div class="p-10 text-center">جاري تحميل محرر صفحة الهبوط...</div>`;
+        }
+
+        if (this.state.error) {
+            return `
+                <div class="min-h-screen flex items-center justify-center bg-gray-50 rtl">
+                    <div class="text-center p-12 bg-white rounded-3xl shadow-xl max-w-md">
+                        <h2 class="text-2xl font-black text-red-600 mb-4">وصول مرفوض</h2>
+                        <p class="text-gray-600 mb-6">ليس لديك الصلاحيات اللازمة لتعديل هذا المنتج. يرجى التأكد من أنك مالك المنتج.</p>
+                        <button id="back-to-dashboard" class="bg-morroky-dark text-white px-8 py-3 rounded-2xl font-bold">العودة للوحة التحكم</button>
+                    </div>
+                </div>
+            `;
         }
 
         const { product, landingPageConfig } = this.state;
@@ -81,7 +112,7 @@ export default class LandingPageEditorScreen {
                             <h1 class="text-3xl font-black text-gray-900">تخصيص صفحة الهبوط لـ: ${product.name}</h1>
                             <p class="text-gray-500">صمم صفحة جذابة لمنتجك لزيادة فرصة الشراء.</p>
                         </div>
-                        <a href="javascript:void(0)" id="back-to-dashboard" class="text-blue-600 font-bold hover:underline">العودة للوحة التحكم</a>
+                        <button id="back-to-dashboard" class="text-blue-600 font-bold hover:underline">العودة للوحة التحكم</button>
                     </header>
 
                     <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6">

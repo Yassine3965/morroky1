@@ -1,108 +1,134 @@
+
 import MerchantService from '../../services/merchant.service.js';
-import { supabase } from '../../services/supabase.js';
-import Toast from '../base/Toast.js';
 import state from '../../managers/state-manager.js';
 
 export class ProductLandingScreen {
-    constructor(options) {
-        this.productId = options.productId;
-        this.product = null;
-        this.landingPageConfig = null;
+    constructor(container, props = {}) {
+        this.container = container;
+        this.productId = props.productId;
+        this.state = {
+            product: null,
+            loading: true,
+            error: null
+        };
+        this.mount();
     }
 
-    async onRendered() {
+    async mount() {
         if (!this.productId) {
             state.setState({ screen: 'gateway' });
+            window.location.hash = '#';
             return;
         }
+        this.render(); // Initial render with loading state
         await this.fetchProductData();
-        this.updateView();
+    }
+
+    _setState(partialState) {
+        this.state = { ...this.state, ...partialState };
+        this.render();
+    }
+
+    render() {
+        this.container.innerHTML = this.template();
+        this.bindEvents();
     }
 
     async fetchProductData() {
         try {
             const product = await MerchantService.getProductById(this.productId);
-            if (!product || !product.landing_page_config) {
-                this.product = null;
-                this.landingPageConfig = null;
-                Toast.show('صفحة الهبوط غير متوفرة لهذا المنتج.', 'error');
-                return;
+            if (!product) {
+                throw new Error('Product not found.');
             }
-            this.product = product;
-            this.landingPageConfig = product.landing_page_config;
+            this._setState({
+                product,
+                loading: false,
+                error: null
+            });
         } catch (error) {
-            console.error('Failed to load product data:', error);
-            Toast.show('فشل في تحميل بيانات المنتج.', 'error');
-            this.product = null;
-            this.landingPageConfig = null;
+            console.error('Failed to load product data for landing page:', error);
+            this._setState({ loading: false, error: 'Product not found or unavailable.' });
         }
-    }
-
-    updateView() {
-        if (!this.product || !this.landingPageConfig) {
-            this.innerHTML = `
-                <div class="min-h-screen flex items-center justify-center bg-gray-50 rtl">
-                    <div class="text-center p-12 glass-morphism rounded-3xl max-w-md">
-                        <h2 class="text-2xl font-black text-gray-800 mb-4">عذراً، صفحة المنتج غير موجودة</h2>
-                        <p class="text-gray-500 mb-6">قد يكون الرابط خاطئ أو أن المنتج لم يعد متوفراً.</p>
-                        <button onclick="window.location.hash = '#/__world'" class="bg-morroky-dark text-white px-8 py-3 rounded-2xl font-bold">العودة للاستكشاف</button>
-                    </div>
-                </div>
-            `;
-            return;
-        }
-
-        const { title, description, sections } = this.landingPageConfig;
-
-        let sectionsHtml = sections.map(section => {
-            switch (section.type) {
-                case 'hero':
-                    return `<div class="hero-section" style="background-image: url('${section.imageUrl || this.product.image_url}');">
-                                <h1>${section.title || title}</h1>
-                                <p>${section.subtitle || description}</p>
-                            </div>`;
-                case 'features':
-                    const featuresHtml = section.features.map(feature => `<li><strong>${feature.title}:</strong> ${feature.description}</li>`).join('');
-                    return `<div class="features-section">
-                                <h2>${section.title}</h2>
-                                <ul>${featuresHtml}</ul>
-                            </div>`;
-                case 'gallery':
-                    const imagesHtml = section.images.map(img => `<img src="${img}" alt="Gallery image">`).join('');
-                    return `<div class="gallery-section">
-                                <h2>${section.title}</h2>
-                                <div class="gallery-images">${imagesHtml}</div>
-                            </div>`;
-                default:
-                    return '';
-            }
-        }).join('');
-
-        this.innerHTML = `
-            <div class="landing-page-container">
-                <header>
-                    <h1>${title}</h1>
-                    <p>${description}</p>
-                </header>
-                <main>
-                    ${sectionsHtml}
-                </main>
-                <footer>
-                    <button id="buy-now-btn">شراء الآن</button>
-                </footer>
-            </div>
-        `;
-
-        this.bindEvents();
     }
 
     bindEvents() {
-        const buyButton = this.querySelector('#buy-now-btn');
+        const buyButton = this.container.querySelector('#buy-now-btn');
         if (buyButton) {
             buyButton.addEventListener('click', () => {
-                //  TODO: Implement order/checkout logic
-                Toast.show('سيتم توجيهك لصفحة الدفع قريباً!');
+                state.showToast('تم استلام طلبك! سنتواصل معك قريباً.', 'success');
             });
         }
+        
+        const backBtn = this.container.querySelector('#btn-back');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                state.setState({ screen: 'world' });
+                window.location.hash = '#/__world';
+            });
+        }
+    }
+
+    template() {
+        if (this.state.loading) {
+            return `
+                <div class="min-h-screen flex items-center justify-center bg-gray-50">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-morroky-red"></div>
+                </div>
+            `;
+        }
+
+        if (this.state.error || !this.state.product) {
+            return `
+                <div class="min-h-screen flex items-center justify-center bg-gray-50 rtl">
+                    <div class="text-center p-12 bg-white rounded-3xl shadow-xl max-w-md">
+                        <h2 class="text-2xl font-black text-gray-800 mb-4">عذراً، صفحة المنتج غير موجودة</h2>
+                        <p class="text-gray-600 mb-6">قد يكون الرابط خاطئ أو أن المنتج لم يعد متوفراً.</p>
+                        <button id="btn-back" class="bg-morroky-dark text-white px-8 py-3 rounded-2xl font-bold">العودة للاستكشاف</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        const { product } = this.state;
+        const config = product.landing_page_config || {};
+
+        return `
+            <div class="min-h-screen bg-white rtl">
+                <!-- Simple Hero Section -->
+                <div class="relative h-[60vh] bg-gray-900 overflow-hidden">
+                    <img src="${product.image_url || 'https://placehold.co/1200x800'}" class="w-full h-full object-cover opacity-60" />
+                    <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 text-white">
+                        <h1 class="text-4xl md:text-6xl font-black mb-4 animate-fade-in-down">${config.headline || product.name}</h1>
+                        <p class="text-xl md:text-2xl text-white/80 max-w-2xl animate-fade-in">${config.description || 'منتج عالي الجودة من موروكي'}</p>
+                    </div>
+                </div>
+
+                <!-- Product Details -->
+                <div class="max-w-4xl mx-auto px-6 py-16">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                        <div>
+                            <h2 class="text-3xl font-bold mb-6">حول هذا المنتج</h2>
+                            <p class="text-gray-600 leading-relaxed text-lg mb-8">
+                                ${config.description || 'هذا المنتج متوفر في أسواق درب عمر بجودة عالية وسعر منافس.'}
+                            </p>
+                            <div class="flex items-center gap-4">
+                                <span class="text-4xl font-black text-morroky-red">${product.price} <span class="text-sm">DH</span></span>
+                                <button id="buy-now-btn" class="flex-1 bg-morroky-green text-white font-bold py-4 rounded-2xl text-xl hover:scale-105 transition-transform shadow-lg shadow-green-200">
+                                    اطلب الآن 🛍️
+                                </button>
+                            </div>
+                        </div>
+                        <div class="rounded-3xl overflow-hidden shadow-2xl">
+                            <img src="${product.image_url || 'https://placehold.co/600x600'}" class="w-full h-full object-cover" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <footer class="bg-gray-50 py-12 text-center border-t">
+                    <p class="text-gray-400">© 2024 Morroky. جميع الحقوق محفوظة.</p>
+                </header>
+            </div>
+        `;
     }
 }

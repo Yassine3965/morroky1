@@ -1,5 +1,5 @@
+
 import state from './state-manager';
-import AuthorizationService from '../services/authorization.service';
 import GatewayScreen from '../components/screens/GatewayScreen';
 import WorldScreen from '../components/screens/WorldScreen';
 import MerchantScreen from '../components/screens/MerchantScreen';
@@ -9,55 +9,23 @@ import AuthScreen from '../components/screens/AuthScreen';
 import LandingPageEditorScreen from '../components/screens/LandingPageEditorScreen.js';
 import { ProductLandingScreen } from '../components/screens/ProductLandingScreen.js';
 
-/**
- * Application Router
- * Handles navigation between different screens and URL routing
- *
- * Features:
- * - Hash-based routing for deep linking
- * - Screen management and rendering
- * - State-driven navigation
- * - Secret routes for admin functionality
- */
 class Router {
     constructor(rootId) {
         this.root = document.getElementById(rootId);
         this.currentScreen = null;
     }
 
-    /**
-     * Initialize the router
-     * Sets up hash change listeners and state subscriptions
-     */
     init() {
-        // Initialize authorization service
-        AuthorizationService.init();
-
-        // Handle URL hash for secret route: #/__admin or #/__manage/ID
-        const handleHash = async () => {
+        // The new router is "dumb" and no longer handles authorization.
+        // It only maps URL hash changes to state changes.
+        const handleHash = () => {
             const hash = window.location.hash;
             if (hash === '#/__admin') {
-                // Check authorization before allowing admin access
-                const isAuthorized = await AuthorizationService.isAuthorizedForScreen('admin');
-                if (isAuthorized) {
-                    state.setState({ screen: 'admin' });
-                } else {
-                    // Redirect to gateway if not authorized
-                    state.setState({ screen: 'gateway' });
-                    state.showToast('غير مصرح لك بالوصول إلى هذه الصفحة', 'error');
-                }
+                state.setState({ screen: 'admin' });
             } else if (hash.startsWith('#/__manage/')) {
                 const merchantId = hash.split('/')[2];
                 if (merchantId) {
-                    // Check authorization before allowing merchant dashboard access
-                    const isAuthorized = await AuthorizationService.isAuthorizedForScreen('merchant-dashboard');
-                    if (isAuthorized) {
-                        state.setState({ screen: 'merchant-dashboard', merchantId: merchantId });
-                    } else {
-                        // Redirect to gateway if not authorized
-                        state.setState({ screen: 'gateway' });
-                        state.showToast('غير مصرح لك بالوصول إلى هذه الصفحة', 'error');
-                    }
+                    state.setState({ screen: 'merchant-dashboard', merchantId: merchantId });
                 }
             } else if (hash.startsWith('#/product/')) {
                 const productId = hash.split('/')[2];
@@ -68,73 +36,60 @@ class Router {
         };
 
         window.addEventListener('hashchange', handleHash);
-        handleHash();
 
+        // The subscription is the single source of truth for rendering.
+        // Any change to the state's `screen` property will trigger a navigation.
         state.subscribe((s) => {
             this.navigate(s.screen, s);
         });
+
+        // On initial page load, check the hash. If a hash is present and matches a route,
+        // it will trigger the subscription via setState. 
+        handleHash();
+
+        // We need an initial navigation for the case where there is no hash.
+        // The subscription only fires on state CHANGE. The initial state is already set.
+        this.navigate(state.getState().screen, state.getState());
     }
 
-    /**
-     * Navigate to a specific screen
-     * @param {string} screenName - Name of the screen to navigate to
-     * @param {Object} appState - Application state to pass to the screen
-     */
-    async navigate(screenName, appState = {}) {
-        // Check authorization for protected screens
-        const protectedScreens = ['admin', 'merchant-dashboard', 'merchant', 'landing-page-editor'];
-        if (protectedScreens.includes(screenName)) {
-            const isAuthorized = await AuthorizationService.isAuthorizedForScreen(screenName);
-            if (!isAuthorized) {
-                // Redirect to gateway if not authorized
-                state.setState({ screen: 'gateway' });
-                state.showToast('غير مصرح لك بالوصول إلى هذه الصفحة', 'error');
-                return;
-            }
-        }
+    navigate(screenName, appState = {}) {
+        // All authorization logic is removed. The screen components themselves are
+        // responsible for fetching their data. RLS will enforce security at the
+        // database level, and the screen can handle any resulting errors.
 
-        // Clear previous screen if needed
+        // Basic guard to prevent re-rendering the same component unnecessarily
+        if (this.currentScreen === screenName && screenName !== 'merchant') return;
+
         this.root.innerHTML = '';
+        this.currentScreen = screenName;
 
-        let screenInstance;
         switch (screenName) {
             case 'gateway':
-                screenInstance = new GatewayScreen({ showRegistration: appState.showRegistration });
+                new GatewayScreen(this.root, { showRegistration: appState.showRegistration });
                 break;
             case 'auth':
-                screenInstance = new AuthScreen();
+                new AuthScreen(this.root);
                 break;
             case 'world':
-                screenInstance = new WorldScreen();
+                new WorldScreen(this.root);
                 break;
             case 'merchant':
-                screenInstance = new MerchantScreen();
+                new MerchantScreen(this.root, { merchantId: appState.selectedMerchantId });
                 break;
             case 'admin':
-                screenInstance = new AdminScreen();
+                new AdminScreen(this.root);
                 break;
             case 'merchant-dashboard':
-                screenInstance = new MerchantDashboardScreen({ merchantId: appState.merchantId });
+                new MerchantDashboardScreen(this.root, { merchantId: appState.merchantId });
                 break;
             case 'landing-page-editor':
-                screenInstance = new LandingPageEditorScreen({ productId: appState.productId, merchantId: appState.merchantId });
+                new LandingPageEditorScreen(this.root, { productId: appState.productId, merchantId: appState.merchantId });
                 break;
             case 'product-landing':
-                screenInstance = new ProductLandingScreen({ productId: appState.productId });
+                new ProductLandingScreen(this.root, { productId: appState.productId });
                 break;
             default:
-                screenInstance = new GatewayScreen({ showRegistration: appState.showRegistration });
-        }
-
-        if (screenInstance) {
-            // Render the screen template and set up event handlers
-            this.root.innerHTML = screenInstance.template();
-            screenInstance.container = this.root;
-
-            // Call onRendered if it exists
-            if (typeof screenInstance.onRendered === 'function') {
-                screenInstance.onRendered();
-            }
+                new GatewayScreen(this.root);
         }
     }
 }
