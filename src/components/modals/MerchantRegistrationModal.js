@@ -61,6 +61,7 @@ export default class MerchantRegistrationModal {
                     <select id="select-street" name="loc-street" required class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-morroky-green outline-none">
                       <option value="">اختر الشارع...</option>
                     </select>
+                    <input id="custom-street" type="text" class="hidden w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-morroky-green outline-none mt-2" placeholder="أدخل اسم الشارع">
                   </div>
 
                   <div class="space-y-1">
@@ -68,6 +69,7 @@ export default class MerchantRegistrationModal {
                     <select id="select-kissaria" name="loc-kissaria" disabled required class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-morroky-green outline-none">
                       <option value="">اختر الشارع أولاً...</option>
                     </select>
+                    <input id="custom-kissaria" type="text" class="hidden w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-morroky-green outline-none mt-2" placeholder="أدخل اسم القيسارية">
                   </div>
 
                   <div class="space-y-1">
@@ -75,6 +77,7 @@ export default class MerchantRegistrationModal {
                     <select id="select-alley" name="loc-alley" disabled required class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-morroky-green outline-none">
                       <option value="">اختر القيسارية أولاً...</option>
                     </select>
+                    <input id="custom-alley" type="text" class="hidden w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-morroky-green outline-none mt-2" placeholder="أدخل اسم الزقة">
                   </div>
 
                   <div class="space-y-1">
@@ -114,12 +117,25 @@ export default class MerchantRegistrationModal {
       streetSelect.appendChild(opt);
     });
 
+    const customStreet = document.getElementById('custom-street');
+    const customKissaria = document.getElementById('custom-kissaria');
+    const customAlley = document.getElementById('custom-alley');
+
     streetSelect.addEventListener('change', async (e) => {
       const streetId = e.target.value;
       kissariaSelect.innerHTML = '<option value="">اختر القيسارية...</option>';
       kissariaSelect.disabled = !streetId;
       alleySelect.innerHTML = '<option value="">اختر القيسارية أولاً...</option>';
       alleySelect.disabled = true;
+
+      if (streetId === 'other') {
+        customStreet.classList.remove('hidden');
+        customStreet.required = true;
+      } else {
+        customStreet.classList.add('hidden');
+        customStreet.required = false;
+        customStreet.value = '';
+      }
 
       if (streetId) {
         const kissariat = await LocationManager.getOptions('kissaria', { streetId });
@@ -138,6 +154,15 @@ export default class MerchantRegistrationModal {
       alleySelect.innerHTML = '<option value="">اختر الزقة...</option>';
       alleySelect.disabled = !kissariaId;
 
+      if (kissariaId === 'other') {
+        customKissaria.classList.remove('hidden');
+        customKissaria.required = true;
+      } else {
+        customKissaria.classList.add('hidden');
+        customKissaria.required = false;
+        customKissaria.value = '';
+      }
+
       if (kissariaId) {
         const alleys = await LocationManager.getOptions('alley', { streetId, kissariaId });
         alleys.forEach(a => {
@@ -146,6 +171,18 @@ export default class MerchantRegistrationModal {
           opt.textContent = a.name;
           alleySelect.appendChild(opt);
         });
+      }
+    });
+
+    alleySelect.addEventListener('change', (e) => {
+      const alleyId = e.target.value;
+      if (alleyId === 'أخرى') {
+        customAlley.classList.remove('hidden');
+        customAlley.required = true;
+      } else {
+        customAlley.classList.add('hidden');
+        customAlley.required = false;
+        customAlley.value = '';
       }
     });
 
@@ -160,17 +197,21 @@ export default class MerchantRegistrationModal {
       submitBtn.innerText = 'جاري الإرسال...';
 
       const formData = new FormData(e.target);
+      const streetId = formData.get('loc-street');
+      const kissariaId = formData.get('loc-kissaria');
+      const alleyId = formData.get('loc-alley');
+
       const data = {
         name: formData.get('name'),
         phone: formData.get('phone'),
         location: {
           city: 'الدار البيضاء',
           market: 'درب عمر',
-          streetId: formData.get('loc-street'),
-          streetName: streetSelect.options[streetSelect.selectedIndex].text,
-          kissariaId: formData.get('loc-kissaria'),
-          kissariaName: kissariaSelect.options[kissariaSelect.selectedIndex].text,
-          alley: formData.get('loc-alley'),
+          streetId,
+          streetName: streetId === 'other' ? customStreet.value : streetSelect.options[streetSelect.selectedIndex].text,
+          kissariaId,
+          kissariaName: kissariaId === 'other' ? customKissaria.value : kissariaSelect.options[kissariaSelect.selectedIndex].text,
+          alley: alleyId === 'أخرى' ? customAlley.value : alleyId,
           shopNumber: formData.get('loc-shopNumber')
         }
       };

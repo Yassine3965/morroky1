@@ -13,17 +13,26 @@ class LocationService {
     }
 
     getStreets() {
-        return this.data.streets || [];
+        const streets = this.data.streets || [];
+        return [...streets, { id: 'other', name: 'أخرى' }];
     }
 
     getKissariat(streetId) {
+        if (streetId === 'other') {
+            return [{ id: 'other', name: 'أخرى' }];
+        }
         const street = this.getStreets().find(s => s.id === streetId);
-        return street ? street.kissariat : [];
+        const kissariat = street ? street.kissariat : [];
+        return [...kissariat, { id: 'other', name: 'أخرى' }];
     }
 
     getAlleys(streetId, kissariaId) {
+        if (kissariaId === 'other') {
+            return ['أخرى'];
+        }
         const kissaria = this.getKissariat(streetId).find(k => k.id === kissariaId);
-        return kissaria ? kissaria.alleys : [];
+        const alleys = kissaria ? kissaria.alleys : [];
+        return [...alleys, 'أخرى'];
     }
 }
 
