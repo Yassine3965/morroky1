@@ -16,6 +16,8 @@ export default class MerchantDashboardScreen {
             isUploading: false,
             uploadMessage: ''
         };
+        this.submitBound = false;
+        this.isAddingProduct = false;
         this.mount();
     }
 
@@ -39,7 +41,7 @@ export default class MerchantDashboardScreen {
     }
 
     bindEvents() {
-        // Use event delegation for all interactions
+        // Bind click events (rebind each render since DOM is replaced)
         this.container.addEventListener('click', async (e) => {
             const target = e.target;
 
@@ -81,14 +83,19 @@ export default class MerchantDashboardScreen {
             }
         });
 
-        this.container.addEventListener('submit', async (e) => {
-            // Add new product
-            if (e.target.id === 'add-product-form') {
-                e.preventDefault();
-                this.handleAddProduct(e.target);
-            }
-        });
+        // Bind submit only once to prevent duplicates
+        if (!this.submitBound) {
+            this.container.addEventListener('submit', async (e) => {
+                // Add new product
+                if (e.target.id === 'add-product-form') {
+                    e.preventDefault();
+                    this.handleAddProduct(e.target);
+                }
+            });
+            this.submitBound = true;
+        }
 
+        // Bind change events (rebind each render)
         this.container.addEventListener('change', async (e) => {
             const target = e.target;
 
@@ -123,6 +130,8 @@ export default class MerchantDashboardScreen {
     }
 
     async handleAddProduct(form) {
+        if (this.isAddingProduct) return;
+
         const name = form.querySelector('#prod-name').value;
         const price = form.querySelector('#prod-price').value;
         const imageInput = form.querySelector('#prod-image');
@@ -133,6 +142,7 @@ export default class MerchantDashboardScreen {
             return;
         }
 
+        this.isAddingProduct = true;
         this._setUploading(true, 'Adding product...');
         try {
             let imageUrl = null;
@@ -147,6 +157,7 @@ export default class MerchantDashboardScreen {
             state.showToast(`Error: ${err.message}`, 'error');
         } finally {
             this._setUploading(false);
+            this.isAddingProduct = false;
         }
     }
 
