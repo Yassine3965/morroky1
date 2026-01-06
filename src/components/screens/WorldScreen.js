@@ -107,8 +107,9 @@ export default class WorldScreen {
           let reasons = merchant.rejection_reasons || [];
           console.log('Original reasons:', reasons.length, 'unsuccessful_sales:', merchant.unsuccessful_sales);
           const defaultReasons = ['المنتج لا يطابق الوصف', 'جودة سيئة', 'تأخير في التسليم', 'خدمة العملاء ضعيفة', 'سعر غير مناسب'];
-          // If less reasons than unsuccessful_sales, add more
-          while (reasons.length < (merchant.unsuccessful_sales || 0)) {
+          // If less reasons than unsuccessful_sales, add more (default to 4 if not set)
+          const targetCount = merchant.unsuccessful_sales || 4;
+          while (reasons.length < targetCount) {
             reasons.push(defaultReasons[reasons.length % defaultReasons.length]);
           }
           console.log('Final reasons:', reasons.length);
