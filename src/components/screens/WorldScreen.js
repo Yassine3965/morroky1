@@ -102,8 +102,7 @@ export default class WorldScreen {
         const merchant = this.state.merchants.find(m => m.id === merchantId);
         if (merchant) {
           const reasons = merchant.rejection_reasons || ['المنتج لا يطابق الوصف', 'جودة سيئة'];
-          const reasonsText = reasons.map(r => `- زبون: ${r}`).join('\n');
-          alert(`أسباب الرفض لمتجر ${merchant.name}:\n\n${reasonsText}`);
+          this.showRejectionModal(merchant.name, reasons);
         }
       });
     });
@@ -142,7 +141,44 @@ export default class WorldScreen {
       this._setState({ loading: false, merchants: [] }); // Clear merchants on error
     }
   }
-  
+
+  showRejectionModal(merchantName, reasons) {
+    // Create modal HTML
+    const modalHTML = `
+      <div id="rejection-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-slide-up">
+          <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-bold text-gray-900">تعليقات العملاء</h3>
+              <button id="close-rejection-modal" class="text-gray-400 hover:text-morroky-red text-2xl">&times;</button>
+            </div>
+            <div class="space-y-3">
+              ${reasons.map(reason => `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p class="text-sm text-gray-700">${reason}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Append modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Close modal handlers
+    const closeModal = () => {
+      const modal = document.getElementById('rejection-modal');
+      if (modal) modal.remove();
+    };
+
+    document.getElementById('close-rejection-modal').addEventListener('click', closeModal);
+    document.getElementById('rejection-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'rejection-modal') closeModal();
+    });
+  }
+
   render() {
     this.container.innerHTML = this.template();
     this.bindEvents();
