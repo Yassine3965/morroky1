@@ -140,8 +140,7 @@ class MerchantService {
             .from('products')
             .select('*')
             .eq('merchant_id', merchantId)
-            .order('created_at', { ascending: false })
-            .limit(50); // Limit to prevent too many
+            .order('created_at', { ascending: false });
         if (error) throw error;
         return data || [];
     }
