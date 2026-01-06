@@ -11,7 +11,8 @@ export default {
                     red: '#c1272d',
                     green: '#006233',
                     gold: '#c6a664',
-                    dark: '#1a1a1a'
+                    dark: '#1a1a1a',
+                    blue: '#007bff'
                 }
             }
         },
