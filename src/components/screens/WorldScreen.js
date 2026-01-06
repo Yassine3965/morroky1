@@ -97,9 +97,12 @@ export default class WorldScreen {
     // Rejection reasons click
     this.container.querySelectorAll('[data-merchant-id-rejections]').forEach(el => {
       el.addEventListener('click', (e) => {
+        console.log('Rejection reasons clicked');
         e.stopPropagation();
         const merchantId = el.getAttribute('data-merchant-id-rejections');
+        console.log('Merchant ID:', merchantId);
         const merchant = this.state.merchants.find(m => m.id === merchantId);
+        console.log('Merchant found:', merchant ? merchant.name : 'not found');
         if (merchant) {
           let reasons = merchant.rejection_reasons || [];
           console.log('Original reasons:', reasons.length, 'unsuccessful_sales:', merchant.unsuccessful_sales);
