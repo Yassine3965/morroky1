@@ -101,7 +101,12 @@ export default class WorldScreen {
         const merchantId = el.getAttribute('data-merchant-id-rejections');
         const merchant = this.state.merchants.find(m => m.id === merchantId);
         if (merchant) {
-          const reasons = merchant.rejection_reasons || ['المنتج لا يطابق الوصف', 'جودة سيئة'];
+          let reasons = merchant.rejection_reasons || [];
+          const defaultReasons = ['المنتج لا يطابق الوصف', 'جودة سيئة', 'تأخير في التسليم', 'خدمة العملاء ضعيفة', 'سعر غير مناسب'];
+          // If less reasons than unsuccessful_sales, add more
+          while (reasons.length < (merchant.unsuccessful_sales || 0)) {
+            reasons.push(defaultReasons[reasons.length % defaultReasons.length]);
+          }
           this.showRejectionModal(merchant.name, reasons);
         }
       });
