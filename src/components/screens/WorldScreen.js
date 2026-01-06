@@ -102,11 +102,13 @@ export default class WorldScreen {
         const merchant = this.state.merchants.find(m => m.id === merchantId);
         if (merchant) {
           let reasons = merchant.rejection_reasons || [];
+          console.log('Original reasons:', reasons.length, 'unsuccessful_sales:', merchant.unsuccessful_sales);
           const defaultReasons = ['المنتج لا يطابق الوصف', 'جودة سيئة', 'تأخير في التسليم', 'خدمة العملاء ضعيفة', 'سعر غير مناسب'];
           // If less reasons than unsuccessful_sales, add more
           while (reasons.length < (merchant.unsuccessful_sales || 0)) {
             reasons.push(defaultReasons[reasons.length % defaultReasons.length]);
           }
+          console.log('Final reasons:', reasons.length);
           this.showRejectionModal(merchant.name, reasons);
         }
       });
