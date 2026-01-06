@@ -139,7 +139,9 @@ class MerchantService {
         const { data, error } = await supabase
             .from('products')
             .select('*')
-            .eq('merchant_id', merchantId);
+            .eq('merchant_id', merchantId)
+            .order('created_at', { ascending: false })
+            .limit(50); // Limit to prevent too many
         if (error) throw error;
         return data || [];
     }
