@@ -10,19 +10,32 @@
     <div id="merchant-dashboard"></div>
     <script type="module">
         import { createApp } from './src/app.js';
-        import AuthService from './src/services/auth.service.js';
+        import { supabase } from './src/services/supabase.js';
 
-        // Check authentication and redirect if not authenticated
-        const checkAuth = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
+        // Single source of truth for auth redirect logic
+        const authStateCallback = (event, user) => {
+            if (event === 'SIGNED_IN' && user) {
+                // User signed in, load the app
+                createApp('#merchant-dashboard', 'merchant-dashboard');
+            } else if (event === 'SIGNED_OUT' || !user) {
+                // User signed out or no session, redirect to home
                 window.location.href = '/';
-                return;
             }
         };
 
-        // Initialize app
-        createApp('#merchant-dashboard');
+        // Listen for auth state changes
+        supabase.auth.onAuthStateChange(authStateCallback);
+
+        // Check initial auth state
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+                // User is already authenticated, load the app
+                createApp('#merchant-dashboard', 'merchant-dashboard');
+            } else {
+                // No session, redirect to home
+                window.location.href = '/';
+            }
+        });
     </script>
 </body>
 </html>

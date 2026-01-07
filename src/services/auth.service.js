@@ -1,13 +1,6 @@
 import { supabase } from './supabase';
 
 class AuthService {
-    async checkAuthAndRedirect() {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user && window.location.pathname !== '/merchant/dashboard.html') {
-            window.location.href = '/merchant/dashboard.html';
-        }
-    }
-
     async signUp(email, password) {
         const { data, error } = await supabase.auth.signUp({
             email,
@@ -21,7 +14,7 @@ class AuthService {
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: window.location.origin
+                redirectTo: `${window.location.origin}/merchant/dashboard.html`
             }
         });
         if (error) throw error;
