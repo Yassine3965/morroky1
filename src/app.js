@@ -7,43 +7,19 @@ import MerchantService from './services/merchant.service';
 
 document.addEventListener('DOMContentLoaded', async () => {
     setupAnimations();
-    const router = new Router('app-root');
-    router.init();
 
-    // Check for OAuth callback and handle authentication
-    const { data: { session }, error } = await AuthService.supabase.auth.getSession();
-    if (session?.user) {
-        // User is authenticated via OAuth, handle post-login logic
-        try {
-            const shop = await MerchantService.getMerchantByOwnerId(session.user.id);
-            if (shop) {
-                state.setState({ screen: 'merchant-dashboard', merchantId: shop.id });
-                window.location.hash = `#/__manage/${shop.id}`;
-            } else {
-                state.setState({ screen: 'gateway', showRegistration: true });
-                window.location.hash = '#';
-            }
-        } catch (err) {
-            console.error('Post-login failed:', err);
-            state.setState({ screen: 'auth' });
-        }
-    } else {
-        // Check if this is an OAuth redirect to merchant dashboard
-        const hash = window.location.hash;
-        if (hash === '#/merchant-dashboard') {
-            // User was redirected here but no session, redirect to auth
-            state.setState({ screen: 'auth' });
-            window.location.hash = '#';
-        } else {
-            // Force initial navigation for non-authenticated users
-            const initialState = state.getState();
-            router.navigate(initialState.screen, initialState);
-        }
-    }
+    // ✅ CRITICAL: Initialize auth listener FIRST before any routing or session checks
+    // This ensures OAuth tokens from URL hash are consumed and session is established
+    let authResolved = false;
 
-    // Listen for auth state changes
-    AuthService.onAuthStateChange(async (event, user) => {
+    const handleAuthState = async (event, user) => {
+        if (authResolved) return; // Prevent duplicate handling
+        authResolved = true;
+
+        console.log('Auth state changed:', event, user ? 'User logged in' : 'No user');
+
         if (event === 'SIGNED_IN' && user) {
+            // User successfully authenticated via OAuth
             try {
                 const shop = await MerchantService.getMerchantByOwnerId(user.id);
                 if (shop) {
@@ -57,18 +33,31 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.error('Post-login failed:', err);
                 state.setState({ screen: 'auth' });
             }
-        } else if (event === 'SIGNED_OUT') {
-            state.setState({ screen: 'gateway' });
-            window.location.hash = '#';
+        } else {
+            // No authenticated user - proceed with normal routing
+            const router = new Router('app-root');
+            router.init();
+            const initialState = state.getState();
+            router.navigate(initialState.screen, initialState);
         }
-    });
+    };
 
-    // Initialize toast notifications
+    // Set up auth state listener - this will consume OAuth tokens from URL
+    AuthService.onAuthStateChange(handleAuthState);
+
+    // Check current session - this will trigger SIGNED_IN if OAuth tokens were consumed
+    const { data: { session } } = await AuthService.supabase.auth.getSession();
+    if (session?.user) {
+        handleAuthState('SIGNED_IN', session.user);
+    } else {
+        handleAuthState('SIGNED_OUT', null);
+    }
+
+    // Initialize UI components
     document.body.insertAdjacentHTML('beforeend', '<div id="toast-container"></div>');
     state.toast.container = document.getElementById('toast-container');
     state.toast.render();
 
-    // Initialize confirm dialog
     document.body.insertAdjacentHTML('beforeend', '<div id="confirm-dialog-container"></div>');
     state.confirmDialog.container = document.getElementById('confirm-dialog-container');
     state.confirmDialog.render();
