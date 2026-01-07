@@ -1,6 +1,12 @@
 import { supabase } from './supabase';
 
 class AuthService {
+    async checkAuthAndRedirect() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && window.location.pathname !== '/merchant/dashboard.html') {
+            window.location.href = '/merchant/dashboard.html';
+        }
+    }
 
     async signUp(email, password) {
         const { data, error } = await supabase.auth.signUp({

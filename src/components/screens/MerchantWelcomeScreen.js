@@ -1,9 +1,18 @@
 import state from '../../managers/state-manager';
+import { supabase } from '../../services/supabase';
 
 export default class MerchantWelcomeScreen {
     constructor(container) {
         this.container = container;
+        this.checkAuthAndRedirect();
         this.render();
+    }
+
+    async checkAuthAndRedirect() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            window.location.href = '/merchant/dashboard.html';
+        }
     }
 
     render() {
