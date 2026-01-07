@@ -28,9 +28,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             state.setState({ screen: 'auth' });
         }
     } else {
-        // Force initial navigation for non-authenticated users
-        const initialState = state.getState();
-        router.navigate(initialState.screen, initialState);
+        // Check if this is an OAuth redirect to merchant dashboard
+        const hash = window.location.hash;
+        if (hash === '#/merchant-dashboard') {
+            // User was redirected here but no session, redirect to auth
+            state.setState({ screen: 'auth' });
+            window.location.hash = '#';
+        } else {
+            // Force initial navigation for non-authenticated users
+            const initialState = state.getState();
+            router.navigate(initialState.screen, initialState);
+        }
     }
 
     // Listen for auth state changes

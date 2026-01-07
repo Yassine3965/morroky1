@@ -14,7 +14,7 @@ class AuthService {
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/merchant/dashboard.html`
+                redirectTo: `${window.location.origin}/#/merchant-dashboard`
             }
         });
         if (error) throw error;

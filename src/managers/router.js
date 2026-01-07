@@ -28,6 +28,10 @@ class Router {
                 if (merchantId) {
                     state.setState({ screen: 'merchant-dashboard', merchantId: merchantId });
                 }
+            } else if (hash === '#/merchant-dashboard') {
+                // Handle OAuth redirect for merchant dashboard
+                // app.js will handle authentication and redirect to proper merchant dashboard
+                state.setState({ screen: 'gateway' });
             } else if (hash.startsWith('#/product/')) {
                 const productId = hash.split('/')[2];
                 if (productId) {
