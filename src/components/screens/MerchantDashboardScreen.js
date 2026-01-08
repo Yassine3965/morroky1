@@ -51,7 +51,7 @@ export default class MerchantDashboardScreen {
                 window.location.hash = '#';
             }
             // Logout
-            if (target.id === 'btn-logout') {
+            if (target.id === 'btn-logout' || target.id === 'btn-logout-products') {
                 await AuthService.logout();
                 state.setState({ screen: 'gateway' });
                 window.location.hash = '#';
@@ -445,7 +445,10 @@ export default class MerchantDashboardScreen {
                             </div>
 
                             <div>
-                                <h2 class="text-xl font-bold mb-4">منتجاتي (${products.length})</h2>
+                                <div class="flex justify-between items-center mb-4">
+                                    <h2 class="text-xl font-bold">منتجاتي (${products.length})</h2>
+                                    <button id="btn-logout-products" class="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600">تسجيل الخروج</button>
+                                </div>
                                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                     ${products.map(p => `
                                         <div class="bg-white rounded-2xl overflow-hidden border group relative">
