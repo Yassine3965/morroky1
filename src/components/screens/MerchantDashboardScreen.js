@@ -57,25 +57,10 @@ export default class MerchantDashboardScreen {
                 window.location.hash = '#';
             }
 
-            // Upload slots for product images - prevent event bubbling
-            for (let i = 0; i < 4; i++) {
-                // Only handle clicks on the slot div, not on the input itself
-                if (target.id === `upload-slot-${i}`) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    const fileInput = this.container.querySelector(`#prod-image-${i}`);
-                    if (fileInput) fileInput.click();
-                    break;
-                }
-                // Check if clicked inside slot (but not on the hidden input)
-                const uploadSlot = target.closest(`#upload-slot-${i}`);
-                if (uploadSlot && target.id !== `prod-image-${i}`) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    const fileInput = this.container.querySelector(`#prod-image-${i}`);
-                    if (fileInput) fileInput.click();
-                    break;
-                }
+            // Upload slots for product images
+            const uploadSlot = e.target.closest('.upload-slot');
+            if (uploadSlot && uploadSlot.dataset.index) {
+                this.handleUploadSlotClick(e, uploadSlot.dataset.index);
             }
 
             // Remove image buttons
@@ -316,7 +301,19 @@ export default class MerchantDashboardScreen {
     _setUploading(isUploading, uploadMessage = '') {
         this._setState({ isUploading, uploadMessage });
     }
-    
+
+    handleUploadSlotClick(e, index) {
+        // Prevent the click from triggering any other event listeners, like on the input itself
+        e.preventDefault();
+        e.stopPropagation();
+
+        const fileInput = this.container.querySelector(`#prod-image-${index}`);
+        if (fileInput) {
+            // Programmatically click the hidden file input
+            fileInput.click();
+        }
+    }
+
     openLpModal() {
         const modal = this.container.querySelector('#landing-page-modal');
         if(modal) modal.classList.remove('hidden');
