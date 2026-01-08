@@ -386,12 +386,11 @@ export default class MerchantDashboardScreen {
                         <a href="javascript:void(0)" id="back-link" class="text-blue-600 font-bold hover:underline">العودة إلى الرئيسية</a>
                     </header>
 
-                    <!-- Main Grid -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <!-- Left Column: Branding -->
-                        <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 h-fit">
-                            <h2 class="text-xl font-bold mb-4">العلامة التجارية</h2>
-                            <div class="flex flex-col items-center">
+                    <!-- Branding Section - Horizontal -->
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-8">
+                        <h2 class="text-xl font-bold mb-4">العلامة التجارية</h2>
+                        <div class="flex flex-col md:flex-row items-center gap-8">
+                            <div class="flex-1 flex flex-col items-center">
                                 <div class="w-32 h-32 rounded-full bg-gray-100 overflow-hidden mb-4 border-4 border-white shadow-lg relative group">
                                     <img src="${m.logo_url || 'https://placehold.co/200x200'}" class="w-full h-full object-cover" />
                                     <label class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer text-white font-bold text-xs">
@@ -399,19 +398,22 @@ export default class MerchantDashboardScreen {
                                         <input type="file" id="logo-input" accept="image/*" class="hidden" />
                                     </label>
                                 </div>
-                                <div class="w-full h-32 rounded-xl bg-white overflow-hidden mb-4 border-4 border-white shadow-lg relative group">
-                                     <div class="absolute inset-0 opacity-10" style="background-image: url('${m.background_url || ''}'); background-size: cover; background-position: center;"></div>
-                                     <label class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer text-white font-bold text-sm z-20">
-                                        تغيير الخلفية
-                                        <input type="file" id="background-input" accept="image/*" class="hidden" />
-                                    </label>
-                                </div>
+                                <p class="text-sm text-gray-600 mt-2">شعار المتجر</p>
+                            </div>
+                            <div class="flex-1 w-full h-48 rounded-xl bg-gray-50 overflow-hidden border-4 border-white shadow-lg relative group">
+                                 <div class="absolute inset-0 opacity-10" style="background-image: url('${m.background_url || ''}'); background-size: cover; background-position: center;"></div>
+                                 <label class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer text-white font-bold text-sm z-20">
+                                    تغيير الخلفية
+                                    <input type="file" id="background-input" accept="image/*" class="hidden" />
+                                </label>
+                                <p class="text-sm text-gray-600 mt-2 text-center">خلفية المتجر</p>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Right Column: Products -->
-                        <div class="md:col-span-2 space-y-8">
-                            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                    <!-- Products Section -->
+                    <div class="space-y-8">
+                        <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                                 <h2 class="text-xl font-bold mb-4">إضافة منتج جديد</h2>
                                 <form id="add-product-form" class="space-y-4">
                                     <!-- Form fields -->
