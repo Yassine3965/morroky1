@@ -57,10 +57,23 @@ export default class MerchantDashboardScreen {
                 window.location.hash = '#';
             }
 
-            // Upload slots for product images
+            // Upload slots for product images - prevent event bubbling
             for (let i = 0; i < 4; i++) {
-                if (target.id === `upload-slot-${i}` || target.closest(`#upload-slot-${i}`)) {
-                    this.container.querySelector(`#prod-image-${i}`).click();
+                // Only handle clicks on the slot div, not on the input itself
+                if (target.id === `upload-slot-${i}`) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const fileInput = this.container.querySelector(`#prod-image-${i}`);
+                    if (fileInput) fileInput.click();
+                    break;
+                }
+                // Check if clicked inside slot (but not on the hidden input)
+                const uploadSlot = target.closest(`#upload-slot-${i}`);
+                if (uploadSlot && target.id !== `prod-image-${i}`) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const fileInput = this.container.querySelector(`#prod-image-${i}`);
+                    if (fileInput) fileInput.click();
                     break;
                 }
             }
@@ -111,26 +124,27 @@ export default class MerchantDashboardScreen {
             this.submitBound = true;
         }
 
-        // Bind change events (rebind each render)
-        this.container.addEventListener('change', async (e) => {
+        // Bind change events (rebind each render) - handle file selection immediately
+        this.container.addEventListener('change', (e) => {
             const target = e.target;
 
-            // Multiple image uploads for new product
+            // Multiple image uploads for new product - trigger immediately on first file selection
             for (let i = 0; i < 4; i++) {
-                if (target.id === `prod-image-${i}`) {
+                if (target.id === `prod-image-${i}` && target.files && target.files[0]) {
+                    e.stopPropagation();
                     this.handleImagePreview(target.files[0], i);
                     break;
                 }
             }
 
             // Uploads
-            if (target.id === 'logo-input') this.handleFileUpload(target.files[0], 'logo');
-            if (target.id === 'background-input') this.handleFileUpload(target.files[0], 'background');
-            if (target.classList.contains('product-image-input')) {
+            if (target.id === 'logo-input' && target.files && target.files[0]) this.handleFileUpload(target.files[0], 'logo');
+            if (target.id === 'background-input' && target.files && target.files[0]) this.handleFileUpload(target.files[0], 'background');
+            if (target.classList.contains('product-image-input') && target.files && target.files[0]) {
                 const productId = target.dataset.productId;
                 this.handleFileUpload(target.files[0], 'product', productId);
             }
-        });
+        }, true); // Use capture phase for immediate handling
     }
 
     async fetchData() {
@@ -413,16 +427,16 @@ export default class MerchantDashboardScreen {
                                              ${[0, 1, 2, 3].map(index => `
                                                  <div class="relative">
                                                      <div id="upload-slot-${index}" class="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-morroky-blue transition-colors bg-white p-2">
-                                                         <div id="upload-icon-${index}" class="text-gray-400 group-hover:text-morroky-blue">
+                                                         <div id="upload-icon-${index}" class="text-gray-400 group-hover:text-morroky-blue pointer-events-none">
                                                              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                                              </svg>
                                                          </div>
-                                                         <span id="upload-text-${index}" class="text-xs text-gray-500 mt-1">إضافة صورة</span>
-                                                         <input type="file" id="prod-image-${index}" accept="image/*" class="hidden" />
+                                                         <span id="upload-text-${index}" class="text-xs text-gray-500 mt-1 pointer-events-none">إضافة صورة</span>
                                                      </div>
+                                                     <input type="file" id="prod-image-${index}" accept="image/*" class="hidden" />
                                                      <img id="preview-${index}" class="hidden absolute inset-0 w-full h-full object-cover rounded-lg" />
-                                                     <button type="button" id="remove-${index}" class="hidden absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600">×</button>
+                                                     <button type="button" id="remove-${index}" class="hidden absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 z-10">×</button>
                                                  </div>
                                              `).join('')}
                                          </div>
