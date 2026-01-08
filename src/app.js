@@ -4,6 +4,7 @@ import { setupAnimations } from './managers/animations';
 import state from './managers/state-manager';
 import AuthService from './services/auth.service';
 import MerchantService from './services/merchant.service';
+import { supabase } from './services/supabase';
 
 document.addEventListener('DOMContentLoaded', async () => {
     setupAnimations();
@@ -43,10 +44,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     // Set up auth state listener - this will consume OAuth tokens from URL
-    AuthService.onAuthStateChange(handleAuthState);
+    supabase.auth.onAuthStateChange((event, session) => {
+        handleAuthState(event, session?.user || null);
+    });
 
     // Check current session - this will trigger SIGNED_IN if OAuth tokens were consumed
-    const { data: { session } } = await AuthService.supabase.auth.getSession();
+    const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
         handleAuthState('SIGNED_IN', session.user);
     } else {
