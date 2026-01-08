@@ -58,9 +58,10 @@ export default class MerchantDashboardScreen {
             }
 
             // Upload slots for product images
-            const uploadSlot = e.target.closest('.upload-slot');
-            if (uploadSlot && uploadSlot.dataset.index) {
-                this.handleUploadSlotClick(e, uploadSlot.dataset.index);
+            const uploadSlot = e.target.closest('[id^="upload-slot-"]');
+            if (uploadSlot) {
+                const index = uploadSlot.id.split('-').pop();
+                this.handleUploadSlotClick(e, index);
             }
 
             // Remove image buttons
