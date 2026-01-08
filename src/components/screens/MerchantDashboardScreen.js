@@ -424,7 +424,7 @@ export default class MerchantDashboardScreen {
                                          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                              ${[0, 1, 2, 3].map(index => `
                                                  <div class="relative">
-                                                     <div id="upload-slot-${index}" class="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-morroky-blue transition-colors bg-white p-2">
+                                                     <div id="upload-slot-${index}" class="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-morroky-blue transition-colors bg-white p-2 relative">
                                                          <div id="upload-icon-${index}" class="text-gray-400 group-hover:text-morroky-blue pointer-events-none">
                                                              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -433,7 +433,7 @@ export default class MerchantDashboardScreen {
                                                          <span id="upload-text-${index}" class="text-xs text-gray-500 mt-1 pointer-events-none">إضافة صورة</span>
                                                      </div>
                                                      <input type="file" id="prod-image-${index}" accept="image/*" class="hidden" />
-                                                     <img id="preview-${index}" class="hidden absolute inset-0 w-full h-full object-cover rounded-lg" />
+                                                     <img id="preview-${index}" class="hidden absolute inset-0 w-full h-full object-cover rounded-lg z-10" />
                                                      <button type="button" id="remove-${index}" class="hidden absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 z-10">×</button>
                                                  </div>
                                              `).join('')}
