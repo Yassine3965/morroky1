@@ -57,6 +57,22 @@ export default class MerchantDashboardScreen {
                 window.location.hash = '#';
             }
 
+            // Upload slots for product images
+            for (let i = 0; i < 4; i++) {
+                if (target.id === `upload-slot-${i}` || target.closest(`#upload-slot-${i}`)) {
+                    this.container.querySelector(`#prod-image-${i}`).click();
+                    break;
+                }
+            }
+
+            // Remove image buttons
+            for (let i = 0; i < 4; i++) {
+                if (target.id === `remove-${i}`) {
+                    this.removeImagePreview(i);
+                    break;
+                }
+            }
+
             // Open product picker modal for landing page
             if (target.id === 'create-landing-page-btn') {
                 this.openLpModal();
@@ -99,9 +115,12 @@ export default class MerchantDashboardScreen {
         this.container.addEventListener('change', async (e) => {
             const target = e.target;
 
-            // Image preview for product
-            if (target.id === 'prod-image') {
-                this.handleImagePreview(target.files[0]);
+            // Multiple image uploads for new product
+            for (let i = 0; i < 4; i++) {
+                if (target.id === `prod-image-${i}`) {
+                    this.handleImagePreview(target.files[0], i);
+                    break;
+                }
             }
 
             // Uploads
@@ -139,29 +158,50 @@ export default class MerchantDashboardScreen {
 
         const name = form.querySelector('#prod-name').value;
         const price = form.querySelector('#prod-price').value;
-        const imageInput = form.querySelector('#prod-image');
-        const file = imageInput.files[0];
 
         if (!name || !price) {
             state.showToast('Please fill in product name and price.', 'error');
             return;
         }
 
+        // Collect all uploaded images
+        const imageUrls = [];
+        for (let i = 0; i < 4; i++) {
+            const fileInput = form.querySelector(`#prod-image-${i}`);
+            if (fileInput && fileInput.files[0]) {
+                this._setUploading(true, `Uploading image ${i + 1}...`);
+                try {
+                    const imageUrl = await StorageService.uploadImage(fileInput.files[0], `products/${this.merchantId}`);
+                    imageUrls.push(imageUrl);
+                } catch (err) {
+                    console.error(`Failed to upload image ${i + 1}:`, err);
+                    // Continue with other images even if one fails
+                }
+            }
+        }
+
+        if (imageUrls.length === 0) {
+            state.showToast('Please upload at least one product image.', 'error');
+            return;
+        }
+
         this.isAddingProduct = true;
         this._setUploading(true, 'Adding product...');
         try {
-            let imageUrl = null;
-            if (file) {
-                imageUrl = await StorageService.uploadImage(file, `products/${this.merchantId}`);
-            }
-            await MerchantService.addProduct({ merchant_id: this.merchantId, name, price: parseFloat(price), image_url: imageUrl });
+            await MerchantService.addProduct({
+                merchant_id: this.merchantId,
+                name,
+                price: parseFloat(price),
+                image_urls: imageUrls
+            });
             state.showToast('Product added successfully!', 'success');
             form.reset();
-            // Hide image preview after form reset
-            const previewContainer = this.container.querySelector('#image-preview-container');
-            if (previewContainer) {
-                previewContainer.classList.add('hidden');
+
+            // Clear all image previews
+            for (let i = 0; i < 4; i++) {
+                this.removeImagePreview(i);
             }
+
             await this.fetchData();
         } catch (err) {
             state.showToast(`Error: ${err.message}`, 'error');
@@ -190,21 +230,45 @@ export default class MerchantDashboardScreen {
         });
     }
 
-    handleImagePreview(file) {
-        const previewContainer = this.container.querySelector('#image-preview-container');
-        const previewImage = this.container.querySelector('#image-preview');
+    handleImagePreview(file, index) {
+        const uploadSlot = this.container.querySelector(`#upload-slot-${index}`);
+        const uploadIcon = this.container.querySelector(`#upload-icon-${index}`);
+        const uploadText = this.container.querySelector(`#upload-text-${index}`);
+        const previewImage = this.container.querySelector(`#preview-${index}`);
+        const removeButton = this.container.querySelector(`#remove-${index}`);
 
         if (file) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 previewImage.src = e.target.result;
-                previewContainer.classList.remove('hidden');
+                uploadSlot.classList.add('border-morroky-blue');
+                uploadIcon.classList.add('hidden');
+                uploadText.classList.add('hidden');
+                previewImage.classList.remove('hidden');
+                removeButton.classList.remove('hidden');
             };
             reader.readAsDataURL(file);
-        } else {
-            previewContainer.classList.add('hidden');
-            previewImage.src = '';
         }
+    }
+
+    removeImagePreview(index) {
+        const uploadSlot = this.container.querySelector(`#upload-slot-${index}`);
+        const uploadIcon = this.container.querySelector(`#upload-icon-${index}`);
+        const uploadText = this.container.querySelector(`#upload-text-${index}`);
+        const previewImage = this.container.querySelector(`#preview-${index}`);
+        const removeButton = this.container.querySelector(`#remove-${index}`);
+        const fileInput = this.container.querySelector(`#prod-image-${index}`);
+
+        // Reset the file input
+        fileInput.value = '';
+
+        // Reset UI
+        uploadSlot.classList.remove('border-morroky-blue');
+        uploadIcon.classList.remove('hidden');
+        uploadText.classList.remove('hidden');
+        previewImage.classList.add('hidden');
+        removeButton.classList.add('hidden');
+        previewImage.src = '';
     }
 
     async handleFileUpload(file, type, entityId = null) {
@@ -288,7 +352,7 @@ export default class MerchantDashboardScreen {
                                 ${products.length > 0 ? products.map(p => `
                                     <div class="lp-product-item flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 hover:border-morroky-blue hover:bg-blue-50 transition cursor-pointer" data-product-id="${p.id}">
                                         <div class="flex items-center gap-4">
-                                            <img src="${p.image_url || 'https://placehold.co/100x100'}" class="w-16 h-16 rounded-lg object-cover" />
+                                            <img src="${(p.image_urls && p.image_urls[0]) || p.image_url || 'https://placehold.co/100x100'}" class="w-16 h-16 rounded-lg object-cover" />
                                             <div>
                                                 <h3 class="font-bold text-gray-800">${p.name}</h3>
                                                 <p class="text-sm text-morroky-green font-bold">${p.price} درهم</p>
@@ -342,12 +406,28 @@ export default class MerchantDashboardScreen {
                                      <input type="text" id="prod-name" class="w-full p-3 bg-gray-50 rounded-xl border" placeholder="اسم المنتج" required />
                                      <input type="number" id="prod-price" class="w-full p-3 bg-gray-50 rounded-xl border" placeholder="السعر (درهم)" required />
 
-                                     <!-- Image Preview Container -->
-                                     <div id="image-preview-container" class="hidden mb-4">
-                                         <img id="image-preview" class="w-full h-48 object-cover rounded-xl border-2 border-dashed border-gray-300" />
+                                     <!-- Multiple Image Upload Grid -->
+                                     <div class="space-y-2">
+                                         <label class="block text-sm font-medium text-gray-700">صور المنتج (حتى 4 صور)</label>
+                                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                             ${[0, 1, 2, 3].map(index => `
+                                                 <div class="relative">
+                                                     <div id="upload-slot-${index}" class="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-morroky-blue transition-colors bg-white p-2">
+                                                         <div id="upload-icon-${index}" class="text-gray-400 group-hover:text-morroky-blue">
+                                                             <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                             </svg>
+                                                         </div>
+                                                         <span id="upload-text-${index}" class="text-xs text-gray-500 mt-1">إضافة صورة</span>
+                                                         <input type="file" id="prod-image-${index}" accept="image/*" class="hidden" />
+                                                     </div>
+                                                     <img id="preview-${index}" class="hidden absolute inset-0 w-full h-full object-cover rounded-lg" />
+                                                     <button type="button" id="remove-${index}" class="hidden absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600">×</button>
+                                                 </div>
+                                             `).join('')}
+                                         </div>
                                      </div>
 
-                                     <input type="file" id="prod-image" accept="image/*" class="w-full p-2 bg-gray-50 rounded-xl border text-sm" />
                                     <button type="submit" class="w-full bg-morroky-blue text-white font-bold py-3 rounded-xl">+ إضافة منتج</button>
                                 </form>
                             </div>
@@ -357,7 +437,7 @@ export default class MerchantDashboardScreen {
                                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                     ${products.map(p => `
                                         <div class="bg-white rounded-2xl overflow-hidden border group relative">
-                                            <img src="${p.image_url || 'https://placehold.co/300x300'}" class="h-32 w-full object-cover" />
+                                            <img src="${(p.image_urls && p.image_urls[0]) || p.image_url || 'https://placehold.co/300x300'}" class="h-32 w-full object-cover" />
                                              <div class="p-3">
                                                 <h3 class="font-bold text-sm truncate">${p.name}</h3>
                                                 <p class="text-morroky-green font-bold text-sm">${p.price} DH</p>

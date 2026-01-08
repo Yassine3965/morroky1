@@ -1,6 +1,11 @@
 
 -- deployment/first-deployment.sql
 
+-- 0. Update products table to support multiple images
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS image_urls TEXT[] DEFAULT '{}';
+UPDATE public.products SET image_urls = ARRAY[image_url] WHERE image_url IS NOT NULL AND image_url != '';
+ALTER TABLE public.products DROP COLUMN IF EXISTS image_url;
+
 -- 1. Create User Roles Table
 CREATE TABLE IF NOT EXISTS public.user_roles (
     user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,

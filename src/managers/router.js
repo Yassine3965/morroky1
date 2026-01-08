@@ -9,6 +9,7 @@ import AuthScreen from '../components/screens/AuthScreen';
 import LandingPageEditorScreen from '../components/screens/LandingPageEditorScreen.js';
 import { ProductLandingScreen } from '../components/screens/ProductLandingScreen.js';
 import MerchantWelcomeScreen from '../components/screens/MerchantWelcomeScreen';
+import ProductDetailScreen from '../components/screens/ProductDetailScreen';
 
 class Router {
     constructor(rootId) {
@@ -35,7 +36,7 @@ class Router {
             } else if (hash.startsWith('#/product/')) {
                 const productId = hash.split('/')[2];
                 if (productId) {
-                    state.setState({ screen: 'product-landing', productId: productId });
+                    state.setState({ screen: 'product-detail', productId: productId });
                 }
             }
         };
@@ -95,6 +96,9 @@ class Router {
                 break;
             case 'merchant-welcome':
                 new MerchantWelcomeScreen(this.root);
+                break;
+            case 'product-detail':
+                new ProductDetailScreen(this.root, { productId: appState.productId });
                 break;
             default:
                 new GatewayScreen(this.root);

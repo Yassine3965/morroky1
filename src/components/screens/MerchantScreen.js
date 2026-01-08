@@ -137,7 +137,7 @@ export default class MerchantScreen {
                       ${products.map(p => `
                           <div class="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow border border-gray-100 group cursor-pointer">
                               <div class="h-64 bg-gray-100 relative overflow-hidden">
-                                  <img src="${p.image_url || 'https://placehold.co/600x600?text=No+Image'}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                  <img src="${(p.image_urls && p.image_urls[0]) || p.image_url || 'https://placehold.co/600x600?text=No+Image'}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                   <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-4">
                                       <span class="text-white font-bold text-sm">عرض التفاصيل</span>
                                   </div>

@@ -96,7 +96,7 @@ export class ProductLandingScreen {
             <div class="min-h-screen bg-white rtl">
                 <!-- Simple Hero Section -->
                 <div class="relative h-[60vh] bg-gray-900 overflow-hidden">
-                    <img src="${product.image_url || 'https://placehold.co/1200x800'}" class="w-full h-full object-cover opacity-60" />
+                    <img src="${(product.image_urls && product.image_urls[0]) || product.image_url || 'https://placehold.co/1200x800'}" class="w-full h-full object-cover opacity-60" />
                     <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 text-white">
                         <h1 class="text-4xl md:text-6xl font-black mb-4 animate-fade-in-down">${config.headline || product.name}</h1>
                         <p class="text-xl md:text-2xl text-white/80 max-w-2xl animate-fade-in">${config.description || 'منتج عالي الجودة من موروكي'}</p>
@@ -119,7 +119,7 @@ export class ProductLandingScreen {
                             </div>
                         </div>
                         <div class="rounded-3xl overflow-hidden shadow-2xl">
-                            <img src="${product.image_url || 'https://placehold.co/600x600'}" class="w-full h-full object-cover" />
+                            <img src="${(product.image_urls && product.image_urls[0]) || product.image_url || 'https://placehold.co/600x600'}" class="w-full h-full object-cover" />
                         </div>
                     </div>
                 </div>

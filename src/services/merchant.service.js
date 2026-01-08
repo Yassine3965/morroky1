@@ -126,9 +126,21 @@ class MerchantService {
     }
 
     async addProduct(productData) {
+        // Ensure image_urls is an array (max 4). Pad with nulls to keep a consistent length.
+        const rawImages = Array.isArray(productData.image_urls)
+            ? productData.image_urls
+            : productData.image_urls ? [productData.image_urls] : [];
+        const normalized = rawImages.slice(0, 4);
+        while (normalized.length < 4) normalized.push(null);
+
+        const processedData = {
+            ...productData,
+            image_urls: normalized
+        };
+
         const { data, error } = await supabase
             .from('products')
-            .insert([productData])
+            .insert([processedData])
             .select()
             .single();
         if (error) throw error;
@@ -180,6 +192,33 @@ class MerchantService {
             .update({ image_url: imageUrl })
             .eq('id', productId);
         if (error) throw error;
+    }
+
+    async updateProductImages(productId, imageUrls) {
+        // Ensure imageUrls is an array
+        const raw = Array.isArray(imageUrls) ? imageUrls : [imageUrls];
+        const normalized = raw.slice(0, 4);
+        while (normalized.length < 4) normalized.push(null);
+
+        const { error } = await supabase
+            .from('products')
+            .update({ image_urls: normalized })
+            .eq('id', productId);
+        if (error) throw error;
+    }
+
+    async addProductImage(productId, imageUrl) {
+        // Get current images and add the new one
+        const product = await this.getProductById(productId);
+        const currentImages = product.image_urls || [];
+        const updatedImages = [...currentImages, imageUrl];
+
+        // Limit to 4 images max
+        if (updatedImages.length > 4) {
+            updatedImages.splice(0, updatedImages.length - 4);
+        }
+
+        await this.updateProductImages(productId, updatedImages);
     }
 
     async updateProductLandingPage(productId, config) {
