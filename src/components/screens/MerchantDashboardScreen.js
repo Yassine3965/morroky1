@@ -99,6 +99,11 @@ export default class MerchantDashboardScreen {
         this.container.addEventListener('change', async (e) => {
             const target = e.target;
 
+            // Image preview for product
+            if (target.id === 'prod-image') {
+                this.handleImagePreview(target.files[0]);
+            }
+
             // Uploads
             if (target.id === 'logo-input') this.handleFileUpload(target.files[0], 'logo');
             if (target.id === 'background-input') this.handleFileUpload(target.files[0], 'background');
@@ -152,6 +157,11 @@ export default class MerchantDashboardScreen {
             await MerchantService.addProduct({ merchant_id: this.merchantId, name, price: parseFloat(price), image_url: imageUrl });
             state.showToast('Product added successfully!', 'success');
             form.reset();
+            // Hide image preview after form reset
+            const previewContainer = this.container.querySelector('#image-preview-container');
+            if (previewContainer) {
+                previewContainer.classList.add('hidden');
+            }
             await this.fetchData();
         } catch (err) {
             state.showToast(`Error: ${err.message}`, 'error');
@@ -178,6 +188,23 @@ export default class MerchantDashboardScreen {
                 }
             }
         });
+    }
+
+    handleImagePreview(file) {
+        const previewContainer = this.container.querySelector('#image-preview-container');
+        const previewImage = this.container.querySelector('#image-preview');
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                previewContainer.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        } else {
+            previewContainer.classList.add('hidden');
+            previewImage.src = '';
+        }
     }
 
     async handleFileUpload(file, type, entityId = null) {
@@ -314,6 +341,12 @@ export default class MerchantDashboardScreen {
                                     <!-- Form fields -->
                                      <input type="text" id="prod-name" class="w-full p-3 bg-gray-50 rounded-xl border" placeholder="اسم المنتج" required />
                                      <input type="number" id="prod-price" class="w-full p-3 bg-gray-50 rounded-xl border" placeholder="السعر (درهم)" required />
+
+                                     <!-- Image Preview Container -->
+                                     <div id="image-preview-container" class="hidden mb-4">
+                                         <img id="image-preview" class="w-full h-48 object-cover rounded-xl border-2 border-dashed border-gray-300" />
+                                     </div>
+
                                      <input type="file" id="prod-image" accept="image/*" class="w-full p-2 bg-gray-50 rounded-xl border text-sm" />
                                     <button type="submit" class="w-full bg-morroky-blue text-white font-bold py-3 rounded-xl">+ إضافة منتج</button>
                                 </form>
