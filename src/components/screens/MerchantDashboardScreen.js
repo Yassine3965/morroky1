@@ -546,7 +546,7 @@ export default class MerchantDashboardScreen {
                         <h2 class="text-4xl font-black text-gray-900 mb-2">إدارة المخزون</h2>
                         <p class="text-gray-500">لديك <span class="text-blue-600 font-bold">${products.length}</span> منتجات معروضة حالياً</p>
                     </div>
-                    <button onclick="app.openModal('add-product')" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-100">
+                    <button onclick="this.openModal('add-product')" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-100">
                         <span class="text-xl">+</span> إضافة منتج جديد
                     </button>
                 </div>
@@ -561,8 +561,8 @@ export default class MerchantDashboardScreen {
                                 </div>
                                 <!-- Quick Actions Overlay -->
                                 <div class="action-overlay absolute inset-0 bg-black/20 backdrop-blur-sm opacity-0 flex items-center justify-center gap-3 transition-all duration-300 translate-y-4">
-                                    <button onclick="app.openModal('edit-product', { productId: '${p.id}' })" class="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all shadow-lg">✏️</button>
-                                    <button onclick="app.handleDeleteProduct('${p.id}')" class="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-lg">🗑️</button>
+                                    <button onclick="this.openModal('edit-product', '${p.id}')" class="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all shadow-lg">✏️</button>
+                                    <button onclick="this.handleDeleteProduct('${p.id}')" class="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-lg">🗑️</button>
                                 </div>
                             </div>
                             <div class="p-8">
@@ -794,7 +794,7 @@ export default class MerchantDashboardScreen {
     navItem(id, icon, label) {
         const active = this.state.currentTab === id;
         return `
-            <button onclick="app.setTab('${id}')" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold ${active ? 'active' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}">
+            <button onclick="this.setTab('${id}')" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold ${active ? 'active' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}">
                 <span class="text-lg opacity-80">${icon}</span>
                 <span>${label}</span>
             </button>
@@ -879,7 +879,7 @@ export default class MerchantDashboardScreen {
                         <h2 class="text-2xl font-black text-slate-800">قائمة المنتجات</h2>
                         <p class="text-slate-500 text-sm">أضف وتحكم في المنتجات التي تظهر لزبائنك</p>
                     </div>
-                    <button onclick="app.toggleAddModal(true)" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-100 flex items-center gap-2">
+                    <button onclick="this.toggleAddModal(true)" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-100 flex items-center gap-2">
                         <span>+</span> إضافة منتج جديد
                     </button>
                 </div>
@@ -954,7 +954,7 @@ export default class MerchantDashboardScreen {
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     ${suppliers.length > 0 ? suppliers.map(s => `
-                        <div onclick="app.viewSupplier('${s.id}')" class="bg-white p-6 rounded-2xl border border-slate-100 card-shadow cursor-pointer hover:border-blue-400 transition-all group">
+                        <div onclick="this.viewSupplier('${s.id}')" class="bg-white p-6 rounded-2xl border border-slate-100 card-shadow cursor-pointer hover:border-blue-400 transition-all group">
                             <div class="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:bg-blue-50 transition-colors">🏢</div>
                             <h3 class="font-black text-lg text-slate-800 mb-1">${s.name}</h3>
                             <p class="text-slate-400 text-xs font-medium mb-4">📍 ${s.location}</p>
@@ -978,7 +978,7 @@ export default class MerchantDashboardScreen {
 
         return `
             <div class="animate-in">
-                <button onclick="app.setTab('suppliers')" class="text-slate-400 font-bold text-sm mb-6 hover:text-blue-600 flex items-center gap-2">
+                <button onclick="this.setTab('suppliers')" class="text-slate-400 font-bold text-sm mb-6 hover:text-blue-600 flex items-center gap-2">
                     ← العودة لجميع الموردين
                 </button>
                 <div class="bg-white p-8 rounded-3xl border border-slate-200 mb-8 card-shadow flex flex-col md:flex-row justify-between items-center gap-4">
@@ -1040,7 +1040,7 @@ export default class MerchantDashboardScreen {
                 <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl animate-in overflow-hidden">
                     <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
                         <h3 class="text-xl font-black text-slate-800 text-right">إضافة منتج لمتجرك</h3>
-                        <button onclick="app.toggleAddModal(false)" class="text-2xl text-slate-300 hover:text-rose-500 transition-colors">&times;</button>
+                        <button onclick="this.toggleAddModal(false)" class="text-2xl text-slate-300 hover:text-rose-500 transition-colors">&times;</button>
                     </div>
                     <div class="p-8 space-y-4 text-right">
                         <div>
@@ -1057,7 +1057,7 @@ export default class MerchantDashboardScreen {
                                 <input type="number" id="prod-stock" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" />
                             </div>
                         </div>
-                        <button onclick="app.handleAddProductFromModal()" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm">نشر الآن</button>
+                        <button onclick="this.handleAddProductFromModal()" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm">نشر الآن</button>
                     </div>
                 </div>
             </div>
