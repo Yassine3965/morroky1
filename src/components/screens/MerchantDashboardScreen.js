@@ -117,7 +117,7 @@ export default class MerchantDashboardScreen {
             // Multiple image uploads for new product - trigger immediately on first file selection
             for (let i = 0; i < 4; i++) {
                 if (target.id === `prod-image-${i}` && target.files && target.files[0]) {
-                    e.stopPropagation();
+                    e.stopImmediatePropagation();
                     this.handleImagePreview(target.files[0], i);
                     break;
                 }
@@ -237,7 +237,7 @@ export default class MerchantDashboardScreen {
         const previewImage = this.container.querySelector(`#preview-${index}`);
         const removeButton = this.container.querySelector(`#remove-${index}`);
 
-        if (file) {
+        if (file && uploadSlot && uploadIcon && uploadText && previewImage && removeButton) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 previewImage.src = e.target.result;
