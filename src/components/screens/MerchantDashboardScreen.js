@@ -90,11 +90,23 @@ export default class MerchantDashboardScreen {
                 state.setState({ screen: 'landing-page-editor', productId, merchantId: this.merchantId });
             }
 
+            // Edit product
+            const editBtn = target.closest('.edit-product-btn');
+            if (editBtn) {
+                const productId = editBtn.dataset.productId;
+                this.openEditModal(productId);
+            }
+
             // Delete product
             const deleteBtn = target.closest('.delete-product-btn');
             if (deleteBtn) {
                 const productId = deleteBtn.dataset.productId;
                 this.handleDeleteProduct(productId);
+            }
+
+            // Close edit modal
+            if (target.id === 'close-edit-modal' || (target.id === 'cancel-edit-btn' && e.target.closest('#edit-product-modal'))) {
+                this.closeEditModal();
             }
         });
 
@@ -105,6 +117,11 @@ export default class MerchantDashboardScreen {
                 if (e.target.id === 'add-product-form') {
                     e.preventDefault();
                     this.handleAddProduct(e.target);
+                }
+                // Edit product
+                if (e.target.id === 'edit-product-form') {
+                    e.preventDefault();
+                    this.handleEditProduct(e.target);
                 }
             });
             this.submitBound = true;
@@ -325,6 +342,60 @@ export default class MerchantDashboardScreen {
         if(modal) modal.classList.add('hidden');
     }
 
+    openEditModal(productId) {
+        const product = this.state.products.find(p => p.id === productId);
+        if (!product) return;
+
+        const modal = this.container.querySelector('#edit-product-modal');
+        const form = this.container.querySelector('#edit-product-form');
+        const productIdInput = this.container.querySelector('#edit-product-id');
+        const nameInput = this.container.querySelector('#edit-product-name');
+        const priceInput = this.container.querySelector('#edit-product-price');
+        const descriptionInput = this.container.querySelector('#edit-product-description');
+
+        // Fill form with current product data
+        productIdInput.value = product.id;
+        nameInput.value = product.name;
+        priceInput.value = product.price;
+        descriptionInput.value = product.description || '';
+
+        // Show modal
+        modal.classList.remove('hidden');
+    }
+
+    closeEditModal() {
+        const modal = this.container.querySelector('#edit-product-modal');
+        if(modal) modal.classList.add('hidden');
+    }
+
+    async handleEditProduct(form) {
+        const productId = form.querySelector('#edit-product-id').value;
+        const name = form.querySelector('#edit-product-name').value;
+        const price = form.querySelector('#edit-product-price').value;
+        const description = form.querySelector('#edit-product-description').value;
+
+        if (!name || !price) {
+            state.showToast('Please fill in product name and price.', 'error');
+            return;
+        }
+
+        this._setUploading(true, 'Updating product...');
+        try {
+            await MerchantService.updateProduct(productId, {
+                name,
+                price: parseFloat(price),
+                description
+            });
+            state.showToast('Product updated successfully!', 'success');
+            this.closeEditModal();
+            await this.fetchData(); // Refresh list
+        } catch (err) {
+            state.showToast(`Error: ${err.message}`, 'error');
+        } finally {
+            this._setUploading(false);
+        }
+    }
+
     template() {
         if (this.state.loading) return `<div class="p-12 text-center text-gray-500">جاري تحميل لوحة التحكم...</div>`;
         
@@ -352,6 +423,36 @@ export default class MerchantDashboardScreen {
                         </div>
                     </div>
                 ` : ''}
+
+                <div id="edit-product-modal" class="fixed inset-0 bg-black/60 z-[102] hidden flex items-center justify-center p-4">
+                    <div class="modal-content bg-white w-full max-w-2xl rounded-3xl shadow-2xl animate-slide-up">
+                       <div class="p-8">
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-2xl font-bold text-gray-900">تحرير المنتج</h2>
+                                <button id="close-edit-modal" class="text-gray-400 hover:text-morroky-red text-2xl">&times;</button>
+                            </div>
+                            <form id="edit-product-form" class="space-y-4">
+                                <input type="hidden" id="edit-product-id" />
+                                <div>
+                                    <label for="edit-product-name" class="block text-sm font-medium text-gray-700 mb-1">اسم المنتج</label>
+                                    <input type="text" id="edit-product-name" class="w-full p-3 bg-gray-50 rounded-xl border" required />
+                                </div>
+                                <div>
+                                    <label for="edit-product-price" class="block text-sm font-medium text-gray-700 mb-1">السعر (درهم)</label>
+                                    <input type="number" id="edit-product-price" class="w-full p-3 bg-gray-50 rounded-xl border" required />
+                                </div>
+                                <div>
+                                    <label for="edit-product-description" class="block text-sm font-medium text-gray-700 mb-1">وصف المنتج</label>
+                                    <textarea id="edit-product-description" class="w-full p-3 bg-gray-50 rounded-xl border" rows="3"></textarea>
+                                </div>
+                                <div class="flex justify-end space-x-4 mt-6">
+                                    <button type="button" id="cancel-edit-btn" class="px-6 py-2 bg-gray-300 text-gray-800 rounded-xl font-bold hover:bg-gray-400">إلغاء</button>
+                                    <button type="submit" class="px-6 py-2 bg-morroky-blue text-white rounded-xl font-bold hover:bg-blue-700">حفظ التغييرات</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
 
                 <div id="landing-page-modal" class="fixed inset-0 bg-black/60 z-[101] hidden flex items-center justify-center p-4">
                     <div class="modal-content bg-white w-full max-w-2xl rounded-3xl shadow-2xl animate-slide-up">
@@ -455,15 +556,16 @@ export default class MerchantDashboardScreen {
                                     ${products.map(p => `
                                         <div class="bg-white rounded-2xl overflow-hidden border group relative">
                                             <img src="${(p.image_urls && p.image_urls[0]) || p.image_url || 'https://placehold.co/300x300'}" class="h-32 w-full object-cover" />
-                                             <div class="p-3">
-                                                <h3 class="font-bold text-sm truncate">${p.name}</h3>
-                                                <p class="text-morroky-green font-bold text-sm">${p.price} DH</p>
-                                                <button data-product-id="${p.id}" class="delete-product-btn absolute top-2 left-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100">🗑️</button>
-                                                <label class="absolute top-2 right-2 bg-blue-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer">
-                                                    📷
-                                                    <input type="file" data-product-id="${p.id}" class="product-image-input hidden" accept="image/*" />
-                                                </label>
-                                            </div>
+                                        <div class="p-3">
+                                            <h3 class="font-bold text-sm truncate">${p.name}</h3>
+                                            <p class="text-morroky-green font-bold text-sm">${p.price} DH</p>
+                                            <button data-product-id="${p.id}" class="delete-product-btn absolute top-2 left-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100">🗑️</button>
+                                            <button data-product-id="${p.id}" class="edit-product-btn absolute top-2 left-10 bg-yellow-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100">✏️</button>
+                                            <label class="absolute top-2 right-2 bg-blue-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer">
+                                                📷
+                                                <input type="file" data-product-id="${p.id}" class="product-image-input hidden" accept="image/*" />
+                                            </label>
+                                        </div>
                                         </div>
                                     `).join('')}
                                 </div>
