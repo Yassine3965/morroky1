@@ -140,8 +140,13 @@ export default class MerchantDashboardScreen {
             }
 
             // Toggle add modal
-            if (target.closest('[onclick*="toggleAddModal"]')) {
+            if (target.closest('[data-action="toggle-add-modal"]')) {
                 this.toggleAddModal(true);
+            }
+
+            // Close add modal
+            if (target.closest('[data-action="close-add-modal"]')) {
+                this.toggleAddModal(false);
             }
 
             // View supplier
@@ -950,7 +955,7 @@ export default class MerchantDashboardScreen {
                         <h2 class="text-2xl font-black text-slate-800">قائمة المنتجات</h2>
                         <p class="text-slate-500 text-sm">أضف وتحكم في المنتجات التي تظهر لزبائنك</p>
                     </div>
-                    <button onclick="this.toggleAddModal(true)" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-100 flex items-center gap-2">
+                    <button data-action="toggle-add-modal" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-100 flex items-center gap-2">
                         <span>+</span> إضافة منتج جديد
                     </button>
                 </div>
@@ -1117,7 +1122,7 @@ export default class MerchantDashboardScreen {
                 <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl animate-in overflow-hidden">
                     <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
                         <h3 class="text-xl font-black text-slate-800 text-right">إضافة منتج لمتجرك</h3>
-                        <button onclick="this.toggleAddModal(false)" class="text-2xl text-slate-300 hover:text-rose-500 transition-colors">&times;</button>
+                        <button data-action="close-add-modal" class="text-2xl text-slate-300 hover:text-rose-500 transition-colors">&times;</button>
                     </div>
                     <div class="p-8 space-y-4 text-right">
                         <div>
@@ -1134,7 +1139,7 @@ export default class MerchantDashboardScreen {
                                 <input type="number" id="prod-stock" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" />
                             </div>
                         </div>
-                        <button onclick="this.handleAddProductFromModal()" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm">نشر الآن</button>
+                        <button class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm">نشر الآن</button>
                     </div>
                 </div>
             </div>
