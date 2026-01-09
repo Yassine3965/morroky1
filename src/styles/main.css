@@ -136,6 +136,20 @@ body::after {
   animation: fadeInDown 0.5s ease-out forwards;
 }
 
+/* تحسينات القائمة الجانبية الموبايل */
+.sidebar-transition {
+  transition: transform 0.3s ease-in-out;
+}
+
+@media (max-width: 1024px) {
+  .sidebar-closed {
+    transform: translateX(100%);
+  }
+  .main-content-full {
+    margin-right: 0 !important;
+  }
+}
+
 /* Dashboard Styles */
 .sidebar-item {
   transition: all 0.2s ease;
@@ -173,4 +187,10 @@ body::after {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* لضمان عدم خروج الجداول عن الشاشة */
+.table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
