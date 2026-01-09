@@ -200,7 +200,12 @@ export default class MerchantDashboardScreen {
             }
 
             // Toggle sidebar
-            if (target.closest('[onclick*="toggleSidebar"]')) {
+            if (target.closest('[onclick*="toggleSidebar"]') || target.closest('[data-toggle-sidebar]')) {
+                this.toggleSidebar();
+            }
+
+            // Close sidebar overlay
+            if (target.closest('[onclick*="toggleSidebar"]') && target.classList.contains('backdrop-blur-sm')) {
                 this.toggleSidebar();
             }
         });
@@ -832,8 +837,8 @@ export default class MerchantDashboardScreen {
                     <!-- Header -->
                     <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-40">
                         <div class="flex items-center gap-4">
-                            <!-- زر الهمبرغر للموبايل -->
-                            <button onclick="this.toggleSidebar()" class="lg:hidden p-2 bg-slate-50 rounded-lg text-slate-600">
+                <!-- زر الهمبرغر للموبايل -->
+                            <button data-toggle-sidebar class="lg:hidden p-2 bg-slate-50 rounded-lg text-slate-600">
                                 ☰
                             </button>
                             <span class="text-slate-800 font-bold text-sm lg:text-base">${this.getTabName()}</span>
@@ -1086,7 +1091,8 @@ export default class MerchantDashboardScreen {
         this._setState({
             currentTab: tab,
             selectedSupplier: null,
-            showAddModal: false
+            showAddModal: false,
+            isSidebarOpen: window.innerWidth < 1024 ? false : this.state.isSidebarOpen // إغلاق القائمة في الموبايل عند تغيير التبويب
         });
     }
 
