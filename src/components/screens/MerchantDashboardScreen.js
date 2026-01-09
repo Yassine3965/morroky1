@@ -306,7 +306,7 @@ export default class MerchantDashboardScreen {
     handleUploadSlotClick(e, index) {
         // Prevent the click from triggering any other event listeners, like on the input itself
         e.preventDefault();
-        e.stopPropagation();
+        e.stopImmediatePropagation();
 
         const fileInput = this.container.querySelector(`#prod-image-${index}`);
         if (fileInput) {
