@@ -135,7 +135,52 @@ export default class MerchantDashboardScreen {
             // Tab switching
             if (target.closest('.nav-tab')) {
                 const tab = target.closest('.nav-tab').dataset.tab;
-                this.setActiveTab(tab);
+                this.setTab(tab);
+            }
+
+            // Toggle add modal
+            if (target.closest('[onclick*="toggleAddModal"]')) {
+                this.toggleAddModal(true);
+            }
+
+            // View supplier
+            if (target.closest('[onclick*="viewSupplier"]')) {
+                const supplierId = target.closest('[onclick*="viewSupplier"]').getAttribute('onclick').match(/'([^']+)'/)[1];
+                this.viewSupplier(supplierId);
+            }
+
+            // Set tab for suppliers
+            if (target.closest('[onclick*="setTab"]')) {
+                const tabName = target.closest('[onclick*="setTab"]').getAttribute('onclick').match(/'([^']+)'/)[1];
+                this.setTab(tabName);
+            }
+
+            // Open modal for edit
+            if (target.closest('[onclick*="openModal"]')) {
+                const onclickAttr = target.closest('[onclick*="openModal"]').getAttribute('onclick');
+                const matches = onclickAttr.match(/openModal\('([^']+)', '([^']+)'\)/);
+                if (matches) {
+                    this.openModal(matches[1], matches[2]);
+                }
+            }
+
+            // Handle delete product
+            if (target.closest('[onclick*="handleDeleteProduct"]')) {
+                const onclickAttr = target.closest('[onclick*="handleDeleteProduct"]').getAttribute('onclick');
+                const matches = onclickAttr.match(/handleDeleteProduct\('([^']+)'\)/);
+                if (matches) {
+                    this.handleDeleteProduct(matches[1]);
+                }
+            }
+
+            // Handle add product from modal
+            if (target.closest('[onclick*="handleAddProductFromModal"]')) {
+                this.handleAddProductFromModal();
+            }
+
+            // Toggle add modal false
+            if (target.closest('[onclick*="toggleAddModal(false)"]')) {
+                this.toggleAddModal(false);
             }
 
             // Modal close
@@ -794,7 +839,7 @@ export default class MerchantDashboardScreen {
     navItem(id, icon, label) {
         const active = this.state.currentTab === id;
         return `
-            <button onclick="this.setTab('${id}')" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold ${active ? 'active' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}">
+            <button data-tab="${id}" class="sidebar-item nav-tab w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold ${active ? 'active' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}">
                 <span class="text-lg opacity-80">${icon}</span>
                 <span>${label}</span>
             </button>
