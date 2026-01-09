@@ -108,6 +108,11 @@ export default class MerchantDashboardScreen {
             if (target.id === 'close-edit-modal' || (target.id === 'cancel-edit-btn' && e.target.closest('#edit-product-modal'))) {
                 this.closeEditModal();
             }
+
+            // View store as customer
+            if (target.id === 'view-store-btn') {
+                this.viewStoreAsCustomer();
+            }
         });
 
         // Bind submit only once to prevent duplicates
@@ -368,6 +373,15 @@ export default class MerchantDashboardScreen {
         if(modal) modal.classList.add('hidden');
     }
 
+    viewStoreAsCustomer() {
+        // Generate store URL based on merchant ID or name
+        // For now, we'll use a simple URL structure: /store/{merchantId}
+        const storeUrl = `${window.location.origin}/#/merchant/${this.merchantId}`;
+
+        // Open in new window/tab
+        window.open(storeUrl, '_blank', 'noopener,noreferrer');
+    }
+
     async handleEditProduct(form) {
         const productId = form.querySelector('#edit-product-id').value;
         const name = form.querySelector('#edit-product-name').value;
@@ -481,8 +495,11 @@ export default class MerchantDashboardScreen {
 
                 <div class="max-w-4xl mx-auto">
                      <header class="mb-8 flex justify-between items-center">
-                        <div>
+                        <div class="flex items-center gap-4">
                             <h1 class="text-3xl font-black text-gray-900">إدارة: ${m.name}</h1>
+                            <button id="view-store-btn" class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors" title="عرض المتجر كما يراه الزبون">
+                                👁️ عرض المتجر
+                            </button>
                         </div>
                         <a href="javascript:void(0)" id="back-link" class="text-blue-600 font-bold hover:underline">العودة إلى الرئيسية</a>
                     </header>
