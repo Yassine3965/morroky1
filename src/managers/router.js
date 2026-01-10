@@ -15,33 +15,16 @@ class Router {
     constructor(rootId) {
         this.root = document.getElementById(rootId);
         this.currentScreen = null;
+        this.isInitialized = false;
     }
 
     init() {
-        // The new router is "dumb" and no longer handles authorization.
-        // It only maps URL hash changes to state changes.
-        const handleHash = () => {
-            const hash = window.location.hash;
-            if (hash === '#/__admin') {
-                state.setState({ screen: 'admin' });
-            } else if (hash.startsWith('#/__manage/')) {
-                const merchantId = hash.split('/')[2];
-                if (merchantId) {
-                    state.setState({ screen: 'merchant-dashboard', merchantId: merchantId });
-                }
-            } else if (hash === '#/merchant-dashboard') {
-                // Handle OAuth redirect for merchant dashboard
-                // app.js will handle authentication and redirect to proper merchant dashboard
-                state.setState({ screen: 'gateway' });
-            } else if (hash.startsWith('#/product/')) {
-                const productId = hash.split('/')[2];
-                if (productId) {
-                    state.setState({ screen: 'product-detail', productId: productId });
-                }
+        // Handle browser history changes (back/forward buttons)
+        window.addEventListener('popstate', (event) => {
+            if (this.isInitialized) {
+                this.handleRouteChange(window.location.pathname);
             }
-        };
-
-        window.addEventListener('hashchange', handleHash);
+        });
 
         // The subscription is the single source of truth for rendering.
         // Any change to the state's `screen` property will trigger a navigation.
@@ -49,22 +32,57 @@ class Router {
             this.navigate(s.screen, s);
         });
 
-        // On initial page load, check the hash. If a hash is present and matches a route,
-        // it will trigger the subscription via setState. 
-        handleHash();
+        // On initial page load, check the current path
+        this.handleRouteChange(window.location.pathname);
+        this.isInitialized = true;
 
-        // We need an initial navigation for the case where there is no hash.
+        // We need an initial navigation for the case where there is no path.
         // The subscription only fires on state CHANGE. The initial state is already set.
         this.navigate(state.getState().screen, state.getState());
     }
 
-    navigate(screenName, appState = {}) {
+    handleRouteChange(pathname) {
+        if (pathname === '/admin') {
+            state.setState({ screen: 'admin' });
+        } else if (pathname.startsWith('/manage/')) {
+            const merchantId = pathname.split('/')[2];
+            if (merchantId) {
+                state.setState({ screen: 'merchant-dashboard', merchantId: merchantId });
+            }
+        } else if (pathname === '/merchant-dashboard') {
+            // Handle OAuth redirect for merchant dashboard
+            // app.js will handle authentication and redirect to proper merchant dashboard
+            state.setState({ screen: 'gateway' });
+        } else if (pathname.startsWith('/product/')) {
+            const productId = pathname.split('/')[2];
+            if (productId) {
+                state.setState({ screen: 'product-detail', productId: productId });
+            }
+        } else if (pathname === '/auth') {
+            state.setState({ screen: 'auth' });
+        } else if (pathname === '/world') {
+            state.setState({ screen: 'world' });
+        } else if (pathname === '/' || pathname === '') {
+            // Default route
+            state.setState({ screen: 'gateway' });
+        }
+    }
+
+    navigate(screenName, appState = {}, updateURL = true) {
         // All authorization logic is removed. The screen components themselves are
         // responsible for fetching their data. RLS will enforce security at the
         // database level, and the screen can handle any resulting errors.
 
         // Basic guard to prevent re-rendering the same component unnecessarily
         if (this.currentScreen === screenName && screenName !== 'merchant') return;
+
+        // Update URL if requested
+        if (updateURL) {
+            const path = this.getPathForScreen(screenName, appState);
+            if (path !== window.location.pathname) {
+                window.history.pushState(null, '', path);
+            }
+        }
 
         this.root.innerHTML = '';
         this.currentScreen = screenName;
@@ -102,6 +120,25 @@ class Router {
                 break;
             default:
                 new GatewayScreen(this.root);
+        }
+    }
+
+    getPathForScreen(screenName, appState = {}) {
+        switch (screenName) {
+            case 'admin':
+                return '/admin';
+            case 'merchant-dashboard':
+                return appState.merchantId ? `/manage/${appState.merchantId}` : '/merchant-dashboard';
+            case 'product-detail':
+                return appState.productId ? `/product/${appState.productId}` : '/';
+            case 'world':
+                return '/world';
+            case 'auth':
+                return '/auth';
+            case 'landing-page-editor':
+                return appState.productId ? `/landing-page-editor/${appState.productId}` : '/landing-page-editor';
+            default:
+                return '/';
         }
     }
 }

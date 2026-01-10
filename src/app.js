@@ -56,11 +56,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (shop) {
                     console.log('Merchant found, redirecting to dashboard...');
                     state.setState({ screen: 'merchant-dashboard', merchantId: shop.id });
-                    window.location.hash = `#/__manage/${shop.id}`;
                 } else {
                     console.log('No merchant found, redirecting to registration...');
                     state.setState({ screen: 'gateway', showRegistration: true });
-                    window.location.hash = '#';
                 }
             } else {
                 // No authenticated user - proceed with normal routing

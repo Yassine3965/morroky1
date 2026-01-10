@@ -66,44 +66,94 @@ export default class MerchantDashboardScreen {
 
     bindEvents() {
         // Bind click events (rebind each render since DOM is replaced)
-        this.container.addEventListener('click', async (e) => {
+        this.container.addEventListener('click', (e) => {
             const target = e.target;
 
-            // Back link
-            if (target.id === 'back-link') {
-                state.setState({ screen: 'gateway' });
-                window.location.hash = '#';
+            // Use early returns for better performance
+            // Check most common actions first
+
+            // Tab switching - common action
+            const navTab = target.closest('.nav-tab');
+            if (navTab) {
+                const tab = navTab.dataset.tab;
+                this.setTab(tab);
+                return;
             }
-            // Logout
-            if (target.id === 'btn-logout' || target.id === 'btn-logout-products') {
-                await AuthService.logout();
-                state.setState({ screen: 'gateway' });
-                window.location.hash = '#';
+
+            // Toggle sidebar - common action
+            if (target.closest('[data-toggle-sidebar]') || (target.closest('[onclick*="toggleSidebar"]') && !target.classList.contains('backdrop-blur-sm'))) {
+                this.toggleSidebar();
+                return;
+            }
+
+            // Edit product - common action
+            const editBtn = target.closest('.edit-product-btn');
+            if (editBtn) {
+                const productId = editBtn.dataset.productId;
+                this.openEditModal(productId);
+                return;
             }
 
             // Upload slots for product images
-            const uploadSlot = e.target.closest('[id^="upload-slot-"]');
+            const uploadSlot = target.closest('[id^="upload-slot-"]');
             if (uploadSlot) {
                 const index = uploadSlot.id.split('-').pop();
                 this.handleUploadSlotClick(e, index);
+                return;
             }
 
             // Remove image buttons
             for (let i = 0; i < 4; i++) {
                 if (target.id === `remove-${i}`) {
                     this.removeImagePreview(i);
-                    break;
+                    return;
                 }
             }
 
-            // Open product picker modal for landing page
-            if (target.id === 'create-landing-page-btn') {
-                this.openLpModal();
+            // Data action handlers
+            const actionElement = target.closest('[data-action]');
+            if (actionElement) {
+                const action = actionElement.dataset.action;
+                switch (action) {
+                    case 'toggle-add-modal':
+                        this.toggleAddModal(true);
+                        return;
+                    case 'close-add-modal':
+                        this.toggleAddModal(false);
+                        return;
+                }
             }
 
-            // Close landing page modal
-            if (target.id === 'close-lp-modal' || e.target.closest('#landing-page-modal') && !e.target.closest('.modal-content')) {
-                this.closeLpModal();
+            // ID-based handlers
+            switch (target.id) {
+                case 'back-link':
+                    state.setState({ screen: 'gateway' });
+                    return;
+                case 'btn-logout':
+                case 'btn-logout-products':
+                    AuthService.logout().then(() => {
+                        state.setState({ screen: 'gateway' });
+                    });
+                    return;
+                case 'create-landing-page-btn':
+                    this.openLpModal();
+                    return;
+                case 'close-lp-modal':
+                    this.closeLpModal();
+                    return;
+                case 'close-edit-modal':
+                case 'cancel-edit-btn':
+                    this.closeEditModal();
+                    return;
+                case 'close-modal':
+                    this.closeModal();
+                    return;
+                case 'view-store-btn':
+                    this.viewStoreAsCustomer();
+                    return;
+                case 'close-add-modal':
+                    this.toggleAddModal(false);
+                    return;
             }
 
             // Select product for landing page
@@ -112,13 +162,7 @@ export default class MerchantDashboardScreen {
                 const productId = lpProductItem.dataset.productId;
                 this.closeLpModal();
                 state.setState({ screen: 'landing-page-editor', productId, merchantId: this.merchantId });
-            }
-
-            // Edit product
-            const editBtn = target.closest('.edit-product-btn');
-            if (editBtn) {
-                const productId = editBtn.dataset.productId;
-                this.openEditModal(productId);
+                return;
             }
 
             // Delete product
@@ -126,92 +170,81 @@ export default class MerchantDashboardScreen {
             if (deleteBtn) {
                 const productId = deleteBtn.dataset.productId;
                 this.handleDeleteProduct(productId);
+                return;
             }
 
-            // Close edit modal
-            if (target.id === 'close-edit-modal' || (target.id === 'cancel-edit-btn' && e.target.closest('#edit-product-modal'))) {
-                this.closeEditModal();
-            }
-
-            // Tab switching
-            if (target.closest('.nav-tab')) {
-                const tab = target.closest('.nav-tab').dataset.tab;
-                this.setTab(tab);
-            }
-
-            // Toggle add modal
-            if (target.closest('[data-action="toggle-add-modal"]')) {
-                this.toggleAddModal(true);
-            }
-
-            // Close add modal
-            if (target.closest('[data-action="close-add-modal"]')) {
-                this.toggleAddModal(false);
-            }
-
-            // View supplier
-            if (target.closest('[onclick*="viewSupplier"]')) {
-                const supplierId = target.closest('[onclick*="viewSupplier"]').getAttribute('onclick').match(/'([^']+)'/)[1];
-                this.viewSupplier(supplierId);
-            }
-
-            // Set tab for suppliers
-            if (target.closest('[onclick*="setTab"]')) {
-                const tabName = target.closest('[onclick*="setTab"]').getAttribute('onclick').match(/'([^']+)'/)[1];
-                this.setTab(tabName);
-            }
-
-            // Open modal for edit
-            if (target.closest('[onclick*="openModal"]')) {
-                const onclickAttr = target.closest('[onclick*="openModal"]').getAttribute('onclick');
-                const matches = onclickAttr.match(/openModal\('([^']+)', '([^']+)'\)/);
-                if (matches) {
-                    this.openModal(matches[1], matches[2]);
-                }
-            }
-
-            // Handle delete product
-            if (target.closest('[onclick*="handleDeleteProduct"]')) {
-                const onclickAttr = target.closest('[onclick*="handleDeleteProduct"]').getAttribute('onclick');
-                const matches = onclickAttr.match(/handleDeleteProduct\('([^']+)'\)/);
-                if (matches) {
-                    this.handleDeleteProduct(matches[1]);
-                }
-            }
-
-            // Handle add product from modal
-            if (target.closest('[onclick*="handleAddProductFromModal"]')) {
-                this.handleAddProductFromModal();
-            }
-
-            // Toggle add modal false
-            if (target.closest('[onclick*="toggleAddModal(false)"]')) {
-                this.toggleAddModal(false);
-            }
-
-            // Modal close
-            if (target.id === 'close-modal' || (target.id === 'modal-overlay' && !target.closest('.modal-content'))) {
+            // Modal overlay clicks
+            if (target.id === 'modal-overlay' && !target.closest('.modal-content')) {
                 this.closeModal();
+                return;
             }
 
-            // View store as customer
-            if (target.id === 'view-store-btn') {
-                this.viewStoreAsCustomer();
+            // Landing page modal overlay
+            if (target.closest('#landing-page-modal') && !target.closest('.modal-content')) {
+                this.closeLpModal();
+                return;
             }
 
-            // Close add modal
-            if (target.id === 'close-add-modal' || (target.closest('.fixed') && !target.closest('.modal-content') && this.state.showAddModal)) {
+            // Add modal overlay
+            if (target.closest('.fixed') && !target.closest('.modal-content') && this.state.showAddModal) {
                 this.toggleAddModal(false);
+                return;
             }
 
-            // Toggle sidebar
-            if (target.closest('[onclick*="toggleSidebar"]') || target.closest('[data-toggle-sidebar]')) {
-                this.toggleSidebar();
-            }
-
-            // Close sidebar overlay
+            // Sidebar overlay
             if (target.closest('[onclick*="toggleSidebar"]') && target.classList.contains('backdrop-blur-sm')) {
                 this.toggleSidebar();
+                return;
+            }
+
+            // Legacy onclick handlers (should be converted to data-action)
+            const onclickElement = target.closest('[onclick]');
+            if (onclickElement) {
+                const onclickAttr = onclickElement.getAttribute('onclick');
+
+                // View supplier
+                if (onclickAttr.includes('viewSupplier')) {
+                    const supplierId = onclickAttr.match(/'([^']+)'/)[1];
+                    this.viewSupplier(supplierId);
+                    return;
+                }
+
+                // Set tab
+                if (onclickAttr.includes('setTab')) {
+                    const tabName = onclickAttr.match(/'([^']+)'/)[1];
+                    this.setTab(tabName);
+                    return;
+                }
+
+                // Open modal
+                if (onclickAttr.includes('openModal')) {
+                    const matches = onclickAttr.match(/openModal\('([^']+)', '([^']+)'\)/);
+                    if (matches) {
+                        this.openModal(matches[1], matches[2]);
+                    }
+                    return;
+                }
+
+                // Handle delete product
+                if (onclickAttr.includes('handleDeleteProduct')) {
+                    const matches = onclickAttr.match(/handleDeleteProduct\('([^']+)'\)/);
+                    if (matches) {
+                        this.handleDeleteProduct(matches[1]);
+                    }
+                    return;
+                }
+
+                // Handle add product from modal
+                if (onclickAttr.includes('handleAddProductFromModal')) {
+                    this.handleAddProductFromModal();
+                    return;
+                }
+
+                // Toggle add modal
+                if (onclickAttr.includes('toggleAddModal(false)')) {
+                    this.toggleAddModal(false);
+                    return;
+                }
             }
         });
 
@@ -477,9 +510,6 @@ export default class MerchantDashboardScreen {
         const product = this.state.products.find(p => p.id === productId);
         if (!product) return;
 
-        // تحديث الرابط برمجياً ليعرف المتصفح أننا في خطوة جديدة
-        window.history.pushState({ action: 'edit' }, '', `${window.location.hash}/edit-${productId}`);
-
         const modal = this.container.querySelector('#edit-product-modal');
         const form = this.container.querySelector('#edit-product-form');
         const productIdInput = this.container.querySelector('#edit-product-id');
@@ -497,20 +527,15 @@ export default class MerchantDashboardScreen {
         modal.classList.remove('hidden');
     }
 
-    closeEditModal(shouldGoBack = true) {
+    closeEditModal() {
         const modal = this.container.querySelector('#edit-product-modal');
         if(modal) modal.classList.add('hidden');
-
-        // إذا أغلقنا النافذة يدوياً، نعود خطوة للخلف في تاريخ المتصفح
-        if (shouldGoBack && window.location.hash.includes('/edit-')) {
-            window.history.back();
-        }
     }
 
     viewStoreAsCustomer() {
         // Generate store URL based on merchant ID or name
-        // For now, we'll use a simple URL structure: /store/{merchantId}
-        const storeUrl = `${window.location.origin}/#/merchant/${this.merchantId}`;
+        // For now, we'll use a simple URL structure: /merchant/{merchantId}
+        const storeUrl = `${window.location.origin}/merchant/${this.merchantId}`;
 
         // Open in new window/tab
         window.open(storeUrl, '_blank', 'noopener,noreferrer');
@@ -549,13 +574,11 @@ export default class MerchantDashboardScreen {
     }
 
     openModal(type, data = null) {
-        window.history.pushState({modal: type}, '', `#${type}`);
         this._setState({ currentModal: type, editProductId: data?.productId });
     }
 
-    closeModal(goBack = true) {
+    closeModal() {
         this._setState({ currentModal: null, editProductId: null });
-        if (goBack) window.history.back();
     }
 
     renderOverview() {

@@ -75,20 +75,17 @@ export default class AuthScreen {
         // Back Button
         this.container.querySelector('#btn-back')?.addEventListener('click', () => {
             state.setState({ screen: 'gateway' });
-            window.location.hash = '#';
         });
     }
 
     async handlePostLogin(user) {
         try {
             const shop = await MerchantService.getMerchantByOwnerId(user.id);
-            if (shop) {
-                state.setState({ screen: 'merchant-dashboard', merchantId: shop.id });
-                window.location.hash = `#/__manage/${shop.id}`;
-            } else {
-                state.setState({ screen: 'gateway', showRegistration: true });
-                window.location.hash = '#';
-            }
+                if (shop) {
+                    state.setState({ screen: 'merchant-dashboard', merchantId: shop.id });
+                } else {
+                    state.setState({ screen: 'gateway', showRegistration: true });
+                }
         } catch (err) {
             console.error('Post-login failed:', err);
             this._setState({ loading: false, error: 'حدث خطأ أثناء جلب بيانات التاجر' });
