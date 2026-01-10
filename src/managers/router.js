@@ -62,6 +62,12 @@ class Router {
             state.setState({ screen: 'auth' });
         } else if (pathname === '/world') {
             state.setState({ screen: 'world' });
+        } else if (pathname.startsWith('/suppliers/')) {
+            const supplierId = pathname.split('/')[2];
+            if (supplierId) {
+                // For now, just go to suppliers tab. The component will handle showing the supplier
+                state.setState({ screen: 'merchant-dashboard', supplierId: supplierId });
+            }
         } else if (pathname === '/' || pathname === '') {
             // Default route
             state.setState({ screen: 'gateway' });
@@ -137,6 +143,12 @@ class Router {
                 return '/auth';
             case 'landing-page-editor':
                 return appState.productId ? `/landing-page-editor/${appState.productId}` : '/landing-page-editor';
+            case 'merchant-dashboard':
+                // Special case: if we have a supplierId, we're showing supplier details
+                if (appState.supplierId) {
+                    return `/suppliers/${appState.supplierId}`;
+                }
+                return appState.merchantId ? `/manage/${appState.merchantId}` : '/merchant-dashboard';
             default:
                 return '/';
         }

@@ -5,9 +5,10 @@ import state from "../../managers/state-manager";
 import AuthService from "../../services/auth.service.js";
 
 export default class MerchantDashboardScreen {
-    constructor(container, { merchantId }) {
+    constructor(container, { merchantId, supplierId }) {
         this.container = container;
         this.merchantId = merchantId;
+        this.supplierId = supplierId; // Store supplierId for later use
         this.state = {
             merchant: null,
             products: [],
@@ -28,6 +29,11 @@ export default class MerchantDashboardScreen {
 
         // ربط حدث زر الرجوع في المتصفح
         window.onpopstate = () => this.handleBrowserBack();
+
+        // If supplierId is provided (from URL), set the tab to suppliers
+        if (supplierId) {
+            this.state.currentTab = 'suppliers';
+        }
 
         this.mount();
     }
@@ -56,6 +62,12 @@ export default class MerchantDashboardScreen {
             this.closeEditModal(false); // false لكي لا نغير الـ history مجدداً
         } else if (lpModal && !lpModal.classList.contains('hidden')) {
             this.closeLpModal(false);
+        } else if (this.state.selectedSupplier) {
+            // إذا كنا في صفحة مورد، نعود لقائمة الموردين
+            this._setState({ selectedSupplier: null });
+        } else {
+            // إذا كنا في قائمة الموردين، نعود للصفحة الرئيسية
+            this.setTab('overview');
         }
     }
 
@@ -327,7 +339,13 @@ export default class MerchantDashboardScreen {
                 }
             ];
 
-            this._setState({ merchant, products, suppliers, loading: false, error: null });
+            // Handle supplier selection from URL
+            let selectedSupplier = null;
+            if (this.supplierId) {
+                selectedSupplier = suppliers.find(s => s.id === this.supplierId) || null;
+            }
+
+            this._setState({ merchant, products, suppliers, selectedSupplier, loading: false, error: null });
         } catch (err) {
             console.error('Failed to fetch merchant data:', err);
             this._setState({ loading: false, error: 'Access Denied. You may not have permission to view this page.' });
@@ -1078,9 +1096,6 @@ export default class MerchantDashboardScreen {
 
         return `
             <div class="animate-in">
-                <button onclick="this.setTab('suppliers')" class="text-slate-400 font-bold text-sm mb-6 hover:text-blue-600 flex items-center gap-2">
-                    ← العودة لجميع الموردين
-                </button>
                 <div class="bg-white p-8 rounded-3xl border border-slate-200 mb-8 card-shadow flex flex-col md:flex-row justify-between items-center gap-4">
                     <div class="text-right">
                         <h2 class="text-2xl font-black text-slate-900">${s.name}</h2>
@@ -1116,6 +1131,16 @@ export default class MerchantDashboardScreen {
     }
 
     setTab(tab) {
+        // When switching to suppliers tab, clear selectedSupplier and update URL
+        if (tab === 'suppliers') {
+            // If we're switching to suppliers tab and there's a selected supplier,
+            // we're coming from a supplier detail, so update URL to suppliers list
+            if (this.state.selectedSupplier) {
+                const newUrl = '/suppliers';
+                window.history.pushState({ tab: 'suppliers' }, '', newUrl);
+            }
+        }
+
         this._setState({
             currentTab: tab,
             selectedSupplier: null,
@@ -1132,6 +1157,9 @@ export default class MerchantDashboardScreen {
         const supplier = this.state.suppliers.find(s => s.id === id);
         if (supplier) {
             this._setState({ selectedSupplier: supplier });
+            // تحديث URL ليتمكن المستخدم من العودة باستخدام زر Chrome
+            const newUrl = `/suppliers/${id}`;
+            window.history.pushState({ supplierId: id }, '', newUrl);
         }
     }
 
